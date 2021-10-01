@@ -1,0 +1,9 @@
+{
+	"name": "com.rtl.markdownrenderer",
+	"displayName":"Markdown Renderer",
+	"version": "0.1.0",
+	"unity": "2021.2",
+	"description": "Add a markdown renderer to render markdown file as UIElements",
+	"dependencies": {
+	}
+}
