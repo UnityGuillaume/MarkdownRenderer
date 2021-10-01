@@ -1,0 +1,67 @@
+VisualElement {
+    
+}
+
+.mainBody {
+    margin: 2px;
+}
+
+.header {
+
+}
+
+.block {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.line {
+    height: 2px;
+    border-width: 1px;
+    border-color: var(--unity-colors-label-text);
+}
+
+.codeblock {
+    margin: 8px;
+    border-color: white;
+    border-width: 1px;
+    border-radius: 5px;
+    background-color: #111111;
+    padding: 5px;
+}
+
+.quote {
+    margin-left: 4px;
+    padding-left: 4px;
+    border-left-width: 2px;
+    border-left-color: var(--unity-colors-label-text);
+    background-color: var(--unity-colors-box-background);
+}
+
+.codeblock Label {
+    -unity-font: resource("Fonts/RobotoMono/RobotoMono-Regular.ttf");
+    -unity-font-definition : resource("Fonts/RobotoMono/RobotoMono-Regular SDF.asset");
+}
+
+.list {
+    white-space: normal;
+}
+
+.h1 {
+    font-size: 200%;
+    -unity-font-style: bold;
+}
+
+.h2 {
+    font-size: 150%;
+    -unity-font-style: bold;
+}
+
+.h3 {
+    font-size: 120%;
+}
+
+.paragraph {
+    white-space: normal;
+}

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Unity.Markdown;
 using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
@@ -12,9 +13,12 @@ namespace MarkdowRenderer
      {
          private Editor m_DefaultEditor;
          private bool m_IsMDFile;
+         private TextAsset m_Target;
 
         public virtual void OnEnable()
         {
+            m_Target = target as TextAsset;
+
             var assembly = typeof(Editor).Assembly;
             var type = assembly.GetType("UnityEditor.TextAssetInspector");
             
@@ -28,7 +32,7 @@ namespace MarkdowRenderer
         {
             if (m_IsMDFile)
             {
-                return new Label("This is a MD test");
+                return UIMarkdownRenderer.GenerateVisualElement(m_Target.text);
             }
             else
             {
