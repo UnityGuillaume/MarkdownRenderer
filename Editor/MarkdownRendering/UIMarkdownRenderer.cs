@@ -1,5 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using log4net.Core;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
@@ -7,10 +11,10 @@ using Unity.Markdown.ObjectRenderers;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using TextElement = UnityEngine.UIElements.TextElement;
 
 namespace Unity.Markdown
 {
-
     public class UIMarkdownRenderer : RendererBase
     {
         private static StyleSheet s_DefaultStylesheet = null;
@@ -25,15 +29,26 @@ namespace Unity.Markdown
         private Label m_CurrentBlockText;
         private Texture m_LoadingTexture;
 
-        class LinkData
-        {
+        private PropertyInfo m_TextHandleFieldInfo;
+        private FieldInfo m_TextInfoFieldInfo;
 
+        private Type m_TextElementInfoType;
+        private FieldInfo m_TextElementInfoFieldInfo;
+
+        private Type m_LinkInfoType;
+        private FieldInfo m_LinkFieldInfo;
+
+        public class LinkData
+        {
+            public List<LinkInfoCopy> LinkInfo;
+            public List<TextElementInfoCopy> TextElementInfo;
         }
 
         public override object Render(MarkdownObject markdownObject)
         {
             RootElement.Clear();
             Write(markdownObject);
+
             return this;
         }
 
@@ -92,6 +107,21 @@ namespace Unity.Markdown
             ObjectRenderers.Add(new LineBreakInlineRenderer());
             ObjectRenderers.Add(new CodeInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
+
+            m_TextHandleFieldInfo = typeof(TextElement).GetProperty("textHandle", BindingFlags.NonPublic|BindingFlags.Instance);
+            Type textCoreHandleType = Type.GetType("UnityEngine.UIElements.TextCoreHandle, UnityEngine.UIElementsModule");
+            m_TextInfoFieldInfo =
+                textCoreHandleType.GetField("m_TextInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            Type textInfoType =
+                Type.GetType("UnityEngine.TextCore.Text.TextInfo, UnityEngine.TextCoreTextEngineModule");
+            
+            m_LinkFieldInfo = textInfoType.GetField("linkInfo");
+            m_TextElementInfoFieldInfo = textInfoType.GetField("textElementInfo");
+
+            m_LinkInfoType = Type.GetType("UnityEngine.TextCore.Text.LinkInfo, UnityEngine.TextCoreTextEngineModule");
+            m_TextElementInfoType =
+                Type.GetType("UnityEngine.TextCore.Text.TextElementInfo, UnityEngine.TextCoreTextEngineModule");
         }
 
         internal void WriteLeafBlockInline(LeafBlock block)
@@ -158,7 +188,10 @@ namespace Unity.Markdown
             if (m_CurrentBlockText.userData == null)
             {
                 m_CurrentBlockText.RegisterCallback<MouseMoveEvent>(MouseMoveOnLink);
+                m_CurrentBlockText.RegisterCallback<ClickEvent>(MouseClickEvent);
                 m_CurrentBlockText.RegisterCallback<MouseLeaveEvent>(MouseLeaveOnLink);
+
+                m_CurrentBlockText.userData = new LinkData();
             }
 
             m_CurrentBlockText.text += "<link=" + linkTarget + "><color=#4C7EFF><u>";
@@ -171,12 +204,46 @@ namespace Unity.Markdown
 
         void MouseMoveOnLink(MouseMoveEvent evt)
         {
-
+            var label = evt.target as Label;
+           CheckLinkAgainstCursor(label, evt.localMousePosition);
         }
 
         void MouseLeaveOnLink(MouseLeaveEvent evt)
         {
+            
+        }
 
+        void MouseClickEvent(ClickEvent evt)
+        {
+            var lnk = CheckLinkAgainstCursor(evt.target as Label, evt.localPosition);
+            
+            if(lnk != null)
+                Debug.Log($"Clicked link : {lnk.GetLinkId()}");
+        }
+
+        LinkInfoCopy CheckLinkAgainstCursor(Label target, Vector2 localMousePosition)
+        {
+            var data = target.userData as LinkData;
+
+            var localPosInvert = localMousePosition;
+            localPosInvert.y = target.localBound.height - localPosInvert.y;
+
+            foreach (var link in data.LinkInfo)
+            {
+                for (int i = 0; i < link.linkTextLength; i++)
+                {
+                    var textInfo = data.TextElementInfo[link.linkTextfirstCharacterIndex + i];
+                    Rect r = new Rect(textInfo.bottomLeft,
+                        new Vector2(textInfo.topRight.x - textInfo.topLeft.x, textInfo.topLeft.y - textInfo.bottomLeft.y));
+                    
+                    if (r.Contains(localPosInvert))
+                    { //hovering that link
+                        return link;
+                    }
+                }
+            }
+
+            return null;
         }
 
         internal void StartBlock(params string[] classList)
@@ -205,7 +272,103 @@ namespace Unity.Markdown
                 return;
             }
 
-            m_BlockStack.Pop();
+            if (m_CurrentBlockText.userData != null)
+            {
+                m_CurrentBlockText.generateVisualContent = m_CurrentBlockText.generateVisualContent + OnGenerateLinkVisualContent;
+            }
+            
+            m_BlockStack.Pop(); 
+        }
+
+        void OnGenerateLinkVisualContent(MeshGenerationContext ctx)
+        {
+            Label l = ctx.visualElement as Label;
+
+            LinkData data = l.userData as LinkData;
+            
+            var th = m_TextHandleFieldInfo.GetValue(ctx.visualElement);
+            var textInfo = m_TextInfoFieldInfo.GetValue(th);
+            
+            var linkInfoArray = m_LinkFieldInfo.GetValue(textInfo) as Array;
+            var textElementInfoArray = m_TextElementInfoFieldInfo.GetValue(textInfo) as Array;
+
+            data.TextElementInfo = new List<TextElementInfoCopy>();
+            foreach (var obj in textElementInfoArray)
+            {
+                TextElementInfoCopy cpy = new TextElementInfoCopy();
+                CopyFromTo(m_TextElementInfoType, obj, ref cpy);
+                data.TextElementInfo.Add(cpy);
+            }
+
+            data.LinkInfo = new List<LinkInfoCopy>();
+            foreach (var itm in linkInfoArray)
+            {
+                LinkInfoCopy cpy = new LinkInfoCopy();
+                CopyFromTo(m_LinkInfoType, itm, ref cpy);
+                data.LinkInfo.Add(cpy);
+            }
+            
+        }
+
+        static void CopyFromTo<T>(Type fromType, object from, ref T to)
+        {
+            var membersSource = fromType.GetFields(BindingFlags.Public|BindingFlags.Instance|BindingFlags.NonPublic);
+            var membersDest = typeof(T).GetFields(BindingFlags.Public|BindingFlags.Instance|BindingFlags.NonPublic);
+            
+            foreach (var info in membersSource)
+            {
+                var dest = membersDest.FirstOrDefault(fieldInfo => fieldInfo.Name == info.Name);
+
+                if (dest != null)
+                {
+                    var value = info.GetValue(from);
+                    dest.SetValue(to, value);
+                }
+            }
         }
     }
+}
+
+// Copy of type from internal UIElement
+
+public class TextElementInfoCopy
+{
+    public char character;
+    public int index;
+    public int spriteIndex;
+    public Material material;
+    public int materialReferenceIndex;
+    public bool isUsingAlternateTypeface;
+    public float pointSize;
+    public int lineNumber;
+    public int pageNumber;
+    public int vertexIndex;
+    public Vector3 topLeft;
+    public Vector3 bottomLeft;
+    public Vector3 topRight;
+    public Vector3 bottomRight;
+    public float origin;
+    public float ascender;
+    public float baseLine;
+    public float descender;
+    public float xAdvance;
+    public float aspectRatio;
+    public float scale;
+    public Color32 color;
+    public Color32 underlineColor;
+    public Color32 strikethroughColor;
+    public Color32 highlightColor;
+    public bool isVisible;
+}
+
+public class LinkInfoCopy
+{
+    public int hashCode;
+    public int linkIdFirstCharacterIndex;
+    public int linkIdLength;
+    public int linkTextfirstCharacterIndex;
+    public int linkTextLength;
+    char[] linkId;
+    
+    public string GetLinkId() => new string(this.linkId, 0, this.linkIdLength);
 }
