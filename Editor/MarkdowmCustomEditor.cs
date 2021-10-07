@@ -32,7 +32,7 @@ namespace MarkdowRenderer
         {
             if (m_IsMDFile)
             {
-                return UIMarkdownRenderer.GenerateVisualElement(m_Target.text);
+                return UIMarkdownRenderer.GenerateVisualElement(m_Target.text, (lnk) => { MarkdownViewer.HandleLink(lnk, m_Target);});
             }
             else
             {

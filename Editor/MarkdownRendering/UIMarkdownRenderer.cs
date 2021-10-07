@@ -36,10 +36,13 @@ namespace Unity.Markdown
         private Type m_LinkInfoType;
         private FieldInfo m_LinkFieldInfo;
 
-        public class LinkData
+        private Action<string> m_CurrentLinkHandler;
+
+        class LinkData
         {
             public List<LinkInfoCopy> LinkInfo;
             public List<TextElementInfoCopy> TextElementInfo;
+            public bool HoveredIconDisplayed;
         }
 
         public override object Render(MarkdownObject markdownObject)
@@ -50,7 +53,7 @@ namespace Unity.Markdown
             return this;
         }
 
-        public static VisualElement GenerateVisualElement(string markdownText, bool includeScrollview = true)
+        public static VisualElement GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true)
         {
             if (s_DefaultStylesheet == null)
             {
@@ -64,6 +67,8 @@ namespace Unity.Markdown
             {
                 s_StaticRenderer = new UIMarkdownRenderer();
             }
+
+            s_StaticRenderer.m_CurrentLinkHandler = LinkHandler;
             
             s_StaticRenderer.Render(Markdig.Markdown.Parse(markdownText));
 
@@ -185,8 +190,19 @@ namespace Unity.Markdown
         {
             if (m_CurrentBlockText.userData == null)
             {
+                //this capture the current click handler, so i fm_CurrentLinkHandler is changed before the link is clicked
+                //we use the right one.
+                var clickHandler = m_CurrentLinkHandler;
                 m_CurrentBlockText.RegisterCallback<MouseMoveEvent>(MouseMoveOnLink);
-                m_CurrentBlockText.RegisterCallback<ClickEvent>(MouseClickEvent);
+                m_CurrentBlockText.RegisterCallback<ClickEvent>((evt) =>
+                {
+                    var lnk = CheckLinkAgainstCursor(evt.target as Label, evt.localPosition);
+                    if (lnk != null)
+                    {
+                        string target = lnk.GetLinkId();
+                        clickHandler(target);
+                    }
+                });
                 m_CurrentBlockText.RegisterCallback<MouseLeaveEvent>(MouseLeaveOnLink);
 
                 m_CurrentBlockText.userData = new LinkData();
@@ -203,20 +219,44 @@ namespace Unity.Markdown
         void MouseMoveOnLink(MouseMoveEvent evt)
         {
             var label = evt.target as Label;
-           CheckLinkAgainstCursor(label, evt.localMousePosition);
+            var linkData = label.userData as LinkData;
+            var link = CheckLinkAgainstCursor(label, evt.localMousePosition);
+
+            if (link == null)
+            {
+                if (linkData.HoveredIconDisplayed)
+                {
+                    linkData.HoveredIconDisplayed = false;
+                    label.RemoveFromClassList("linkHovered");
+                    
+                    //needed to force the cursor to update
+                    label.SendEvent(new MouseOverEvent());
+                }
+            }
+            else
+            {
+                if (!linkData.HoveredIconDisplayed)
+                {
+                    linkData.HoveredIconDisplayed = true;
+                    label.AddToClassList("linkHovered");
+                    
+                    //needed to force the cursor to update
+                    label.SendEvent(new MouseOverEvent());
+                }
+            }
+            
         }
 
         void MouseLeaveOnLink(MouseLeaveEvent evt)
         {
+            var label = evt.target as Label;
+            var linkData = label.userData as LinkData;
             
-        }
-
-        void MouseClickEvent(ClickEvent evt)
-        {
-            var lnk = CheckLinkAgainstCursor(evt.target as Label, evt.localPosition);
-            
-            if(lnk != null)
-                Debug.Log($"Clicked link : {lnk.GetLinkId()}");
+            if (linkData.HoveredIconDisplayed)
+            {
+                linkData.HoveredIconDisplayed = false;
+                label.RemoveFromClassList("linkHovered");
+            }
         }
 
         LinkInfoCopy CheckLinkAgainstCursor(Label target, Vector2 localMousePosition)
@@ -324,49 +364,50 @@ namespace Unity.Markdown
                 }
             }
         }
-    }
-}
-
-// Copy of type from internal UIElement
-
-public class TextElementInfoCopy
-{
-    public char character;
-    public int index;
-    public int spriteIndex;
-    public Material material;
-    public int materialReferenceIndex;
-    public bool isUsingAlternateTypeface;
-    public float pointSize;
-    public int lineNumber;
-    public int pageNumber;
-    public int vertexIndex;
-    public Vector3 topLeft;
-    public Vector3 bottomLeft;
-    public Vector3 topRight;
-    public Vector3 bottomRight;
-    public float origin;
-    public float ascender;
-    public float baseLine;
-    public float descender;
-    public float xAdvance;
-    public float aspectRatio;
-    public float scale;
-    public Color32 color;
-    public Color32 underlineColor;
-    public Color32 strikethroughColor;
-    public Color32 highlightColor;
-    public bool isVisible;
-}
-
-public class LinkInfoCopy
-{
-    public int hashCode;
-    public int linkIdFirstCharacterIndex;
-    public int linkIdLength;
-    public int linkTextfirstCharacterIndex;
-    public int linkTextLength;
-    char[] linkId;
+        
+        //Those are just copy of the internal class in TextCore to easily copy the content of those by reflection as their
+        //counterpart are internal. If this is exposed someday, can be removed.
     
-    public string GetLinkId() => new string(this.linkId, 0, this.linkIdLength);
+        internal class TextElementInfoCopy
+        {
+            public char character;
+            public int index;
+            public int spriteIndex;
+            public Material material;
+            public int materialReferenceIndex;
+            public bool isUsingAlternateTypeface;
+            public float pointSize;
+            public int lineNumber;
+            public int pageNumber;
+            public int vertexIndex;
+            public Vector3 topLeft;
+            public Vector3 bottomLeft;
+            public Vector3 topRight;
+            public Vector3 bottomRight;
+            public float origin;
+            public float ascender;
+            public float baseLine;
+            public float descender;
+            public float xAdvance;
+            public float aspectRatio;
+            public float scale;
+            public Color32 color;
+            public Color32 underlineColor;
+            public Color32 strikethroughColor;
+            public Color32 highlightColor;
+            public bool isVisible;
+        }
+
+        internal class LinkInfoCopy
+        {
+            public int hashCode;
+            public int linkIdFirstCharacterIndex;
+            public int linkIdLength;
+            public int linkTextfirstCharacterIndex;
+            public int linkTextLength;
+            char[] linkId;
+    
+            public string GetLinkId() => new string(this.linkId, 0, this.linkIdLength);
+        }
+    }
 }

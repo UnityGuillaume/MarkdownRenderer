@@ -32,6 +32,23 @@ public class MarkdownViewer : EditorWindow
 
     void Setup()
     {
-       rootVisualElement.Add(UIMarkdownRenderer.GenerateVisualElement(m_Asset.text));
+       rootVisualElement.Add(UIMarkdownRenderer.GenerateVisualElement(m_Asset.text, (lnk) => HandleLink(lnk, m_Asset)));
+    }
+
+    public static void HandleLink(string link, TextAsset context)
+    {
+        if (link.StartsWith("./") || link.StartsWith("../"))
+        {//relative link
+            var path = AssetDatabase.GetAssetPath(context);
+            
+        }
+        else if (link.StartsWith("Assets/"))
+        {//project link
+            
+        }
+        else
+        {//any other link is open normally
+            Application.OpenURL(link);
+        }
     }
 }
