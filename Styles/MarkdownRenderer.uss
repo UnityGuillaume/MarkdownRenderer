@@ -48,6 +48,10 @@ VisualElement {
     white-space: normal;
 }
 
+.linkHovered {
+    cursor: link;
+}
+
 .h1 {
     font-size: 200%;
     -unity-font-style: bold;
