@@ -2,7 +2,7 @@
     "name": "Unity.[SubGroup].[YourPackageName].Editor",
     "rootNamespace": "",
     "references": [
-        "MarkdigDLL"
+        "Markdig"
     ],
     "includePlatforms": [
         "Editor"

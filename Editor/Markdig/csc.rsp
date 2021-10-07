@@ -1,0 +1,3 @@
+-nullable:enable
+-define:NETCORE
+-nowarn:8602
