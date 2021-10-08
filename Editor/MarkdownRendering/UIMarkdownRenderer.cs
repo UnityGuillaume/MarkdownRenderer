@@ -47,7 +47,7 @@ namespace Unity.Markdown
 
         public override object Render(MarkdownObject markdownObject)
         {
-            RootElement.Clear();
+            CreateNewRoot();
             Write(markdownObject);
 
             return this;
@@ -89,13 +89,18 @@ namespace Unity.Markdown
             return returnElem;
         }
 
-        public UIMarkdownRenderer()
+        void CreateNewRoot()
         {
             RootElement = new VisualElement();
             RootElement.name = "RendererRoot";
             RootElement.AddToClassList("mainBody");
+            
+            m_BlockStack.Clear();
             m_BlockStack.Push(RootElement);
+        }
 
+        public UIMarkdownRenderer()
+        {
             m_LoadingTexture = EditorGUIUtility.Load("WaitSpin00") as Texture;
 
             ObjectRenderers.Add(new ParagraphBlockRenderer());

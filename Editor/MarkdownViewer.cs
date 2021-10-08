@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
@@ -37,18 +38,32 @@ public class MarkdownViewer : EditorWindow
 
     public static void HandleLink(string link, TextAsset context)
     {
-        if (link.StartsWith("./") || link.StartsWith("../"))
+        if (link.StartsWith("file://"))
         {//relative link
-            var path = AssetDatabase.GetAssetPath(context);
-            
+            //remove the handler type
+            var cleanPath = link.Replace("file://", "");
+
+            if (cleanPath.StartsWith("Assets") || cleanPath.StartsWith("./") || cleanPath.StartsWith("../"))
+            {
+                var combined = "";
+                if (!cleanPath.StartsWith("Assets"))
+                {
+                    var assetPath = AssetDatabase.GetAssetPath(context);
+                    assetPath = Path.GetDirectoryName(assetPath);
+                    combined = Path.GetFullPath(Path.Join(assetPath, cleanPath)).Replace("\\", "/");
+                    combined = combined.Replace(Application.dataPath, "Assets");
+                }
+                else
+                {
+                    combined = cleanPath;
+                }
+                
+                var obj = AssetDatabase.LoadAssetAtPath<Object>(combined);
+                Selection.activeObject = obj;
+            }
         }
-        else if (link.StartsWith("Assets/"))
-        {//project link
-            
-        }
-        else
-        {//any other link is open normally
-            Application.OpenURL(link);
-        }
+        
+        //any other link is open normally
+        Application.OpenURL(link);
     }
 }
