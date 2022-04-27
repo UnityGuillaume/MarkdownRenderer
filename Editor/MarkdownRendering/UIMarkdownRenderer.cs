@@ -119,7 +119,7 @@ namespace Unity.Markdown
             m_TextHandleFieldInfo = typeof(TextElement).GetProperty("textHandle", BindingFlags.NonPublic|BindingFlags.Instance);
             Type textCoreHandleType = Type.GetType("UnityEngine.UIElements.TextCoreHandle, UnityEngine.UIElementsModule");
             m_TextInfoFieldInfo =
-                textCoreHandleType.GetField("m_TextInfo", BindingFlags.NonPublic | BindingFlags.Instance);
+                textCoreHandleType.GetField("m_TextInfoMesh", BindingFlags.NonPublic | BindingFlags.Instance);
 
             Type textInfoType =
                 Type.GetType("UnityEngine.TextCore.Text.TextInfo, UnityEngine.TextCoreTextEngineModule");
@@ -267,6 +267,9 @@ namespace Unity.Markdown
         LinkInfoCopy CheckLinkAgainstCursor(Label target, Vector2 localMousePosition)
         {
             var data = target.userData as LinkData;
+
+            if (data == null)
+                return null;
 
             var localPosInvert = localMousePosition;
             localPosInvert.y = target.localBound.height - localPosInvert.y;
