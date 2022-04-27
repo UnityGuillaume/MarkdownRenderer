@@ -13,3 +13,7 @@ you own windows and tools.
 - Select add a package on disk
 - select the package.json in that repo
 
+# Known limitations
+
+Right now only external link works, don't handle files or anchors links.
+
