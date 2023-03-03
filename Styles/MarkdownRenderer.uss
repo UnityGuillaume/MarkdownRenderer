@@ -69,3 +69,7 @@ VisualElement {
 .paragraph {
     white-space: normal;
 }
+
+.md-image {
+    width: 100%;
+}

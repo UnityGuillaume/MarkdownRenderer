@@ -1,8 +1,10 @@
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 using Unity.Markdown;
+using Object = UnityEngine.Object;
 
 public class MarkdownViewer : EditorWindow
 {
@@ -61,8 +63,41 @@ public class MarkdownViewer : EditorWindow
                 var obj = AssetDatabase.LoadAssetAtPath<Object>(combined);
                 Selection.activeObject = obj;
             }
+        } 
+        else if (link.StartsWith("cmd:"))
+        {
+            string cmdName;
+            string[] parameters;
+            
+            link = link.Replace("cmd:", "");
+            int openingParenthesis = link.IndexOf('(');
+            if (openingParenthesis == -1)
+            {
+                //no parameters
+                cmdName = link;
+                parameters = Array.Empty<string>();
+            }
+            else
+            {
+                //we find the closing one
+                int closingParenthesis = link.IndexOf(')');
+
+                cmdName = link.Substring(0, openingParenthesis);
+                string parametersString = link.Substring(openingParenthesis+1, closingParenthesis - openingParenthesis - 1);
+
+                parameters = parametersString.Split(',');
+
+            }
+            
+            UIMarkdownRenderer.Command cmd = new UIMarkdownRenderer.Command()
+            {
+                CommandName = cmdName,
+                CommandParameters = parameters
+            };
+                
+            UIMarkdownRenderer.SendCommand(cmd);
         }
-        
+
         //any other link is open normally
         Application.OpenURL(link);
     }
