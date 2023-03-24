@@ -1,10 +1,21 @@
 # Markdown UIElement
 
-This package add rendering of markdown file by using UIElement.
+This package add rendering of markdown file in Unity by using UIElement.
 
 It will override the default inspector on .md file and offer a simple
-API to get a VisualElement root with the makrdown as children to add to
+API to get a VisualElement root with the markdown as children to add to
 you own windows and tools.
+
+It also include a special Attribute to display Markdown doc file for a given Monobehaviour and
+the Markdown implementation handle some special keyword link to simplify link in a Unity Project.
+
+- [Installation](#installation)
+- [Special syntax](#note-and-special-syntax)
+  - [Relative Paths](#relative-path)
+  - [Commands](#commands)
+- [MarkdownDoc Attribute](#markdowndoc-attribute)
+- [Render Markdown in your tools](#render-markdown-in-your-own-tools)
+
 
 # Installation
 
@@ -13,55 +24,79 @@ you own windows and tools.
 - Select add a package on disk
 - select the package.json in that repo
 
-# Special Syntax
+# Note and Special Syntax
 
-The implementation handle special keyword/command, especially in link, specific to unity.
+The implementation is a bit more restrictive than most markdown renderer, so this will list some kirk.
+It also handle special keyword/command, especially in link, specific to unity.
 
 ## Relative path
 
-Using `rel:` before a path mean "relative to the markdown file". This is useful e.g. for documentation with
-image on a folder next to the MD file. That way redistributing the documentation doesn't need to know where
-in the project the file will be, just that the images are in a folder next to the document.
+Local path are handled relatively to where the Markdown file is.
 
-E.g. for this hierarchy
-```
-    |- MyDoc.md
-    |- Images
-        |- MyScreen.png
-```
+so `![Tutorial image](./doc/image.png)` will load the image.png that is in the doc folder next to the MD
+file. The handler look for `..` and `.` at the start of a path to make it relative. 
 
-using the markdown
+_Note that explicit file protocol, `file://./doc/image.png` will **not work** as the system won't be able
+to modify the path to path the current folder of the MD file_
 
-`![A screenshot](rel:Images/MyScreen.png)`
+## Search path
 
-will automatically change that path to the proper full path for the system to load the image
+A special handler for this Unity implementation is the `![My Image](search:special_doc)` link type.
+
+This will search for a file called `special_doc` in the asset folder, and will replace with its path.
+
+- In an image link, this allow to store the image anywhere and the file will find it.
+- In a link, this will look for the file and set it as the current selection. This means it allows :
+  - To link to other Markdown file in the project without having to know their location, as when a Markdown file is selected, it get rendered.
+  - To highlight and select any other asset your doc may want to point to (prefab, image, script etc.)
+
+Note however that it doesn't support multiple file with the same name and will always return the first found.
 
 ## Commands
 
-You can trigger a command through a link. By using the syntax
+You can trigger a command through a link. By using the syntax `[link text](cmd:cmdName)` where cmdName is
+the name of a command.
 
-`[Click here to open the tool](cmd:toolOpen)`
+This package got a couple of builtin command but you can also write your own.
 
-Then registering a handler through `UIMarkdownRenderer.RegisterCommandHandler` which take a delegate with
+> **NOTE : SPACE ARE NOT PERMITTED IN COMMAND, THEY BREAK THE LINK**. so `[click](cmd:log(this is log)` won't
+work. `[click](cmd:save(material,scene))` would work but `[click](cmd:save(material, scene))` would
+**NOT** work because of the space between `,` and `scene`
+
+### Built-in Commands
+
+- `log(word)` : print the word in the console. 
+- `highlight(window,text)` : wrapper for the Unity function `Highlighter.Highlight` highlight the given text in the given window, useful for documentation (**careful
+  about potential stray space that will break your link display on this one**)
+
+### Custom Commands
+
+Register a handler through `UIMarkdownRenderer.RegisterCommandHandler` which take a delegate with
 a single parameter of type `Command`.
 
 A `Command` contains the `CommandName` a string that is the command name specified in our link (in our
 example `toolOpen`) and an array of string `CommandParameters` which is parameters you can send to the command
-through `[Click here to start material check](cmd:objectCheck(material))`
 
-**NOTE : SPACE ARE NOT PERMITTED IN COMMAND, THEY BREAK THE LINK**. so `[click](cmd:log(this is log)` won't 
-work. But `[click](cmd:save(material,scene))` would work. But `[click](cmd:save(material, scene))` would
-**NOT** work because of the space between `,` and `scene`
+# MarkdownDoc Attribute
 
-There is a built-in CommandHandler which handle the given commands.
+The package contains an attribute `MardownDoc(DocFileName)` that can be applied to a Monobehaviour. 
 
-### Built-in Commands
+If the Markdown Doc Viewer is open (Windows > Markdown Doc View or double clicking on a markdown file) is open
+and a Gameobject with a Monobehaviour that have a `MarkdownDoc` attribute is selected, the doc specified
+in the attribute will be loaded in the window.
 
-- `log(word)` : print the word in the console. Can be useful to test if your command handler is registered properly
-- `highlight(window,text)` : wrapper for the Unity function `Highlighter.Highlight` highlight the given text in the given window, useful for documentation (**careful
-about potential stray space that will break your link display on this one**)
+The file is search by name, so you do not have to put a full path, just the name without extension (e.g. for
+a doc file that is in `Assets/Tools/Docs/MyBehaviourDoc.md` the attribute `MarkdownDoc("MyBehaviourDoc")` will work)
 
-# Known limitations
+# Render Markdown in your own tools
 
-Right now only external link works, don't handle files or anchors links.
+The markdown renderer is using UIElement, so you can embed it in your own tools. 
 
+Just call
+
+`GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true, string filePath = "")`
+
+- `markdownText` is the content of the markdown file to render
+- `linkHandler` is the function called when a link is clicked. MarkdownViewer contains a default one you can use or copy
+- `includeScrollview` is if the scrollview should be part of the returned VisualElement or not. Set to false if you want to put in your own scrollview.
+- `filePath` is the path to the rendered file. Used by the image rendering code to find relative path image. If you don't use relative path image, you can leave to empty.

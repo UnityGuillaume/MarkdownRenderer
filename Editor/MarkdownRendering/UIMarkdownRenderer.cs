@@ -68,7 +68,7 @@ namespace Unity.Markdown
             return this;
         }
 
-        public static VisualElement GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true, string filePath = "")
+        public static VisualElement GenerateVisualElement(string markdownText,  Action<string> linkHandler, bool includeScrollview = true, string filePath = "")
         {
             if (s_DefaultStylesheet == null)
             {
@@ -83,7 +83,7 @@ namespace Unity.Markdown
                 s_StaticRenderer = new UIMarkdownRenderer();
             }
 
-            s_StaticRenderer.m_CurrentLinkHandler = LinkHandler;
+            s_StaticRenderer.m_CurrentLinkHandler = linkHandler;
             s_StaticRenderer.m_FileFolder = System.IO.Path.GetDirectoryName(filePath).Replace("Assets", Application.dataPath);
 
             s_StaticRenderer.Render(Markdig.Markdown.Parse(markdownText));
@@ -131,7 +131,7 @@ namespace Unity.Markdown
                         return;
                     }
 
-                    Highlighter.Highlight(cmd.CommandParameters[0], cmd.CommandParameters[1]);
+                    Highlighter.Highlight(cmd.CommandParameters[0], cmd.CommandParameters[1], HighlightSearchMode.Identifier);
                 }
                     break;
             }
@@ -205,7 +205,10 @@ namespace Unity.Markdown
 
             for (int i = 0; i < lines.Count; i++)
             {
-                WriteText(slices[i].ToString() + "\n");
+                string line = slices[i].ToString();
+                if (i != lines.Count - 1) line += "\n";
+                
+                WriteText(line);
             }
         }
 
