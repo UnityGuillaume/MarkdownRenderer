@@ -17,12 +17,25 @@ namespace Unity.Markdown
     {
         private static StyleSheet s_DefaultStylesheet = null;
         private static UIMarkdownRenderer s_StaticRenderer = null;
+
+        public class Command
+        {
+            public string CommandName;
+            public string[] CommandParameters;
+        };
+
+        public delegate void CommandHandlerDelegate(Command cmd);
         
         public VisualElement RootElement { protected set; get; }
         public bool LockTextCreation { get; set; } = false;
         public int IndentLevel { get; set; } = 0;
 
+        public string FileFolder => m_FileFolder;
+
         private Stack<VisualElement> m_BlockStack = new Stack<VisualElement>();
+
+        //useful when using relative file path
+        private string m_FileFolder;
 
         private Label m_CurrentBlockText;
         private Texture m_LoadingTexture;
@@ -37,6 +50,8 @@ namespace Unity.Markdown
         private FieldInfo m_LinkFieldInfo;
 
         private Action<string> m_CurrentLinkHandler;
+
+        private CommandHandlerDelegate m_CommandHandler;
 
         class LinkData
         {
@@ -53,7 +68,7 @@ namespace Unity.Markdown
             return this;
         }
 
-        public static VisualElement GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true)
+        public static VisualElement GenerateVisualElement(string markdownText,  Action<string> linkHandler, bool includeScrollview = true, string filePath = "")
         {
             if (s_DefaultStylesheet == null)
             {
@@ -68,8 +83,9 @@ namespace Unity.Markdown
                 s_StaticRenderer = new UIMarkdownRenderer();
             }
 
-            s_StaticRenderer.m_CurrentLinkHandler = LinkHandler;
-            
+            s_StaticRenderer.m_CurrentLinkHandler = linkHandler;
+            s_StaticRenderer.m_FileFolder = System.IO.Path.GetDirectoryName(filePath).Replace("Assets", Application.dataPath);
+
             s_StaticRenderer.Render(Markdig.Markdown.Parse(markdownText));
 
             VisualElement returnElem = null;
@@ -87,6 +103,38 @@ namespace Unity.Markdown
                 returnElem.styleSheets.Add(s_DefaultStylesheet);
 
             return returnElem;
+        }
+
+        public static void RegisterCommandHandler(CommandHandlerDelegate handler)
+        {
+            s_StaticRenderer.m_CommandHandler += handler;
+        }
+
+        public static void SendCommand(Command cmd)
+        {
+            s_StaticRenderer.m_CommandHandler.Invoke(cmd);
+        }
+
+        void DefaultCommandHandler(Command cmd)
+        {
+            switch (cmd.CommandName)
+            {
+                case "log":
+                    if (cmd.CommandParameters.Length == 0) return;
+                    Debug.Log(cmd.CommandParameters[0]);
+                    break;
+                case "highlight":
+                {
+                    if (cmd.CommandParameters.Length != 2)
+                    {
+                        Debug.LogError("Command highlight with another number of parameters than 2");
+                        return;
+                    }
+
+                    Highlighter.Highlight(cmd.CommandParameters[0], cmd.CommandParameters[1], HighlightSearchMode.Identifier);
+                }
+                    break;
+            }
         }
 
         void CreateNewRoot()
@@ -130,6 +178,8 @@ namespace Unity.Markdown
             m_LinkInfoType = Type.GetType("UnityEngine.TextCore.Text.LinkInfo, UnityEngine.TextCoreTextEngineModule");
             m_TextElementInfoType =
                 Type.GetType("UnityEngine.TextCore.Text.TextElementInfo, UnityEngine.TextCoreTextEngineModule");
+
+            m_CommandHandler += DefaultCommandHandler;
         }
 
         internal void WriteLeafBlockInline(LeafBlock block)
@@ -155,7 +205,10 @@ namespace Unity.Markdown
 
             for (int i = 0; i < lines.Count; i++)
             {
-                WriteText(slices[i].ToString() + "\n");
+                string line = slices[i].ToString();
+                if (i != lines.Count - 1) line += "\n";
+                
+                WriteText(line);
             }
         }
 
@@ -183,6 +236,8 @@ namespace Unity.Markdown
             FinishBlock();
 
             Image imgElement = new Image();
+            imgElement.AddToClassList("md-image");
+            imgElement.scaleMode = ScaleMode.ScaleToFit;
             imgElement.image = m_LoadingTexture;
 
             m_BlockStack.Peek().Add(imgElement);
@@ -372,7 +427,7 @@ namespace Unity.Markdown
                 }
             }
         }
-        
+
         //Those are just copy of the internal class in TextCore to easily copy the content of those by reflection as their
         //counterpart are internal. If this is exposed someday, can be removed.
     

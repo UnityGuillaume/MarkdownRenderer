@@ -24,7 +24,7 @@ namespace MarkdowRenderer
             
             CreateCachedEditor(target, type, ref m_DefaultEditor);
             
-            //TODO : handle also other extension? Poitentially skip that and display every file as Markdown?
+            //TODO : handle also other extension? Potentially skip that and display every file as Markdown?
             m_IsMDFile = Path.GetExtension(AssetDatabase.GetAssetPath(target)) == ".md";
         }
 
@@ -32,17 +32,15 @@ namespace MarkdowRenderer
         {
             if (m_IsMDFile)
             {
-                return UIMarkdownRenderer.GenerateVisualElement(m_Target.text, (lnk) => { MarkdownViewer.HandleLink(lnk, m_Target);});
+                return UIMarkdownRenderer.GenerateVisualElement(m_Target.text, (lnk) => { MarkdownViewer.HandleLink(lnk, m_Target);}, true, AssetDatabase.GetAssetPath(m_Target));
             }
-            else
-            {
-                var elem = new IMGUIContainer(m_DefaultEditor.OnInspectorGUI);
+
+            var elem = new IMGUIContainer(m_DefaultEditor.OnInspectorGUI);
                 
-                //by default the stylesheet seems to add some margin, so we reverse them to fit "right"
-                elem.style.marginTop = 2;
-                elem.style.marginLeft = -15;
-                return elem;
-            }
+            //by default the stylesheet seems to add some margin, so we reverse them to fit "right"
+            elem.style.marginTop = 2;
+            elem.style.marginLeft = -15;
+            return elem;
         }
      }
 }

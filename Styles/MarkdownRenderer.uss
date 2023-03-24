@@ -27,7 +27,7 @@ VisualElement {
     border-color: white;
     border-width: 1px;
     border-radius: 5px;
-    background-color: #111111;
+    background-color: rgb(63,63,63);
     padding: 5px;
 }
 
@@ -68,4 +68,8 @@ VisualElement {
 
 .paragraph {
     white-space: normal;
+}
+
+.md-image {
+    width: 100%;
 }
