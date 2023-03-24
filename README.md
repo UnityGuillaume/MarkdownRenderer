@@ -19,15 +19,27 @@ the Markdown implementation handle some special keyword link to simplify link in
 
 # Installation
 
-- clone that repository
-- In the Package Manager, click the + sign on the rop right corner
-- Select add a package on disk
-- select the package.json in that repo
+You can install this package either with :
+
+- git :
+  - in the Package Manager, click on the + at the top right corner
+  - choose "add package from git URL"
+  - paste the git URL from that repository (https may work better than ssh due to authentication)
+
+- locally :
+  - clone that repository
+  - In the Package Manager, click the + sign on the rop right corner
+  - Select add a package on disk
+  - select the package.json in that repo
+
+_Note on git method_ : this will require git to be installed on your machine (e.g. you can run git in your terminal)
+If you installed git when the Unity editor or Hub was running, the PATH it used won't be updated so close them all completly before.
+<br/>**ON WINDOWS this mean also right click -> quit on the hub icon in the tray icon that may be hidden next to the time/date***
 
 # Note and Special Syntax
 
-The implementation is a bit more restrictive than most markdown renderer, so this will list some kirk.
-It also handle special keyword/command, especially in link, specific to unity.
+The Markdown support implementation may miss some bits, so this list some quirks it may have.
+This also highlight some special keyword/command it has, especially in link, specific to unity.
 
 ## Relative path
 
@@ -37,16 +49,16 @@ so `![Tutorial image](./doc/image.png)` will load the image.png that is in the d
 file. The handler look for `..` and `.` at the start of a path to make it relative. 
 
 _Note that explicit file protocol, `file://./doc/image.png` will **not work** as the system won't be able
-to modify the path to path the current folder of the MD file_
+to modify the path to the current folder of the MD file_
 
 ## Search path
 
 A special handler for this Unity implementation is the `![My Image](search:special_doc)` link type.
 
-This will search for a file called `special_doc` in the asset folder, and will replace with its path.
+This will search for a file called `special_doc` in the Assets folder, and will use its path.
 
 - In an image link, this allow to store the image anywhere and the file will find it.
-- In a link, this will look for the file and set it as the current selection. This means it allows :
+- In a link, this will look for the file and set it as the current Editor selection. This means it allows :
   - To link to other Markdown file in the project without having to know their location, as when a Markdown file is selected, it get rendered.
   - To highlight and select any other asset your doc may want to point to (prefab, image, script etc.)
 
@@ -79,13 +91,13 @@ example `toolOpen`) and an array of string `CommandParameters` which is paramete
 
 # MarkdownDoc Attribute
 
-The package contains an attribute `MardownDoc(DocFileName)` that can be applied to a Monobehaviour. 
+The package contains an attribute `MarkdownDoc(DocFileName)` that can be applied to a Monobehaviour. 
 
-If the Markdown Doc Viewer is open (Windows > Markdown Doc View or double clicking on a markdown file) is open
+If the Markdown Doc Viewer is open (Windows > Markdown Doc View or double clicking on a markdown file)
 and a Gameobject with a Monobehaviour that have a `MarkdownDoc` attribute is selected, the doc specified
 in the attribute will be loaded in the window.
 
-The file is search by name, so you do not have to put a full path, just the name without extension (e.g. for
+The file is searched by name, so you do not have to put a full path, just the name without extension (e.g. for
 a doc file that is in `Assets/Tools/Docs/MyBehaviourDoc.md` the attribute `MarkdownDoc("MyBehaviourDoc")` will work)
 
 # Render Markdown in your own tools
@@ -94,9 +106,11 @@ The markdown renderer is using UIElement, so you can embed it in your own tools.
 
 Just call
 
-`GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true, string filePath = "")`
+```
+GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true, string filePath = "")
+```
 
-- `markdownText` is the content of the markdown file to render
-- `linkHandler` is the function called when a link is clicked. MarkdownViewer contains a default one you can use or copy
-- `includeScrollview` is if the scrollview should be part of the returned VisualElement or not. Set to false if you want to put in your own scrollview.
-- `filePath` is the path to the rendered file. Used by the image rendering code to find relative path image. If you don't use relative path image, you can leave to empty.
+- `markdownText` : the content of the markdown file to render
+- `linkHandler` : the function called when a link is clicked. MarkdownViewer contains a default one you can use or copy
+- `includeScrollview` : if the scrollview should be part of the returned VisualElement or not. Set to false if you want to put in your own scrollview.
+- `filePath` : the path to the rendered file. Used by the image rendering code to find relative path image. If you don't use relative path image, you can leave to empty.
