@@ -68,7 +68,7 @@ namespace Unity.Markdown
             return this;
         }
 
-        public static VisualElement GenerateVisualElement(string markdownText,  Action<string> linkHandler, bool includeScrollview = true, string filePath = "")
+        public static VisualElement GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true, string filePath = "")
         {
             if (s_DefaultStylesheet == null)
             {
@@ -83,7 +83,7 @@ namespace Unity.Markdown
                 s_StaticRenderer = new UIMarkdownRenderer();
             }
 
-            s_StaticRenderer.m_CurrentLinkHandler = linkHandler;
+            s_StaticRenderer.m_CurrentLinkHandler = LinkHandler;
             s_StaticRenderer.m_FileFolder = System.IO.Path.GetDirectoryName(filePath).Replace("Assets", Application.dataPath);
 
             s_StaticRenderer.Render(Markdig.Markdown.Parse(markdownText));
@@ -163,11 +163,22 @@ namespace Unity.Markdown
             ObjectRenderers.Add(new LineBreakInlineRenderer());
             ObjectRenderers.Add(new CodeInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
+            
+            #if UNITY_2022_1_OR_NEWER
+            string handleName = "uitkTextHandle";
+            string textHandleTypeName = "UnityEngine.TextCore.Text.TextHandle, UnityEngine.TextCoreTextEngineModule";
+            string textInfoName = "m_TextInfo";
+            #else 
+            string handleName = "textHandle";
+            string textHandleTypeName = "UnityEngine.UIElements.TextCoreHandle, UnityEngine.UIElementsModule";
+            string textInfoName = "m_TextInfoMesh";
+            #endif
+            
 
-            m_TextHandleFieldInfo = typeof(TextElement).GetProperty("textHandle", BindingFlags.NonPublic|BindingFlags.Instance);
-            Type textCoreHandleType = Type.GetType("UnityEngine.UIElements.TextCoreHandle, UnityEngine.UIElementsModule");
+            m_TextHandleFieldInfo = typeof(TextElement).GetProperty(handleName, BindingFlags.NonPublic|BindingFlags.Instance);
+            Type textCoreHandleType = Type.GetType(textHandleTypeName);
             m_TextInfoFieldInfo =
-                textCoreHandleType.GetField("m_TextInfoMesh", BindingFlags.NonPublic | BindingFlags.Instance);
+                textCoreHandleType.GetField(textInfoName, BindingFlags.NonPublic | BindingFlags.Instance);
 
             Type textInfoType =
                 Type.GetType("UnityEngine.TextCore.Text.TextInfo, UnityEngine.TextCoreTextEngineModule");

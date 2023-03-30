@@ -2,6 +2,9 @@
 
 This package add rendering of markdown file in Unity by using UIElement.
 
+> This has only been tested in 2021.3 LTS and a bit 2022.2. As this use some Reflection to
+> access some text property, it may breaks on other versions
+
 It will override the default inspector on .md file and offer a simple
 API to get a VisualElement root with the markdown as children to add to
 you own windows and tools.
