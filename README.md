@@ -16,6 +16,7 @@ the Markdown implementation handle some special keyword link to simplify link in
 - [Special syntax](#note-and-special-syntax)
   - [Relative Paths](#relative-path)
   - [Commands](#commands)
+  - [Custom Class and USS Files](#custom-classes-and-uss-files)
 - [MarkdownDoc Attribute](#markdowndoc-attribute)
 - [Render Markdown in your tools](#render-markdown-in-your-own-tools)
 
@@ -91,6 +92,50 @@ a single parameter of type `Command`.
 
 A `Command` contains the `CommandName` a string that is the command name specified in our link (in our
 example `toolOpen`) and an array of string `CommandParameters` which is parameters you can send to the command
+
+## Custom Classes and USS Files
+
+The renderer have the Markdig Extensions for YAML front matter and Generic attributes enabled. This means you can set custom class to elements
+in your Markdown and give a custom uss file used to render it (in addition to the default ones)
+
+### Custom classes
+
+Custom classes are defined using Generic Attribute (see [Markdig Generic Attributes documentation](https://github.com/xoofx/markdig/blob/master/src/Markdig.Tests/Specs/GenericAttributesSpecs.md) 
+for more info).
+
+```
+{.test-class}
+This paragraph will have .test-class class assigned to it
+
+{.whole-block}
+> ## This is a quote block
+> that whole block have the .whole-block class assigned to it
+> {.line-class} This line will have .line-class class on it
+> 
+> Not this line though
+```
+
+### Custom USS files
+
+In addition to custom classes on elements in Markdown, you can specify a USS file to be used to render that file.
+
+This use Markdig YAML front matter extension. To speicify the uss add this front matter at the top of your Markdown file
+
+```markdown
+---
+uss: ./path/to/file.uss
+---
+
+This file will use the file specified in addition to the default USS
+```
+
+Refer to Markdig [YAML Front Matter documentation](https://github.com/xoofx/markdig/blob/master/src/Markdig.Tests/Specs/YamlSpecs.md) for the format possible
+but this was tested only with two `---` delimiter.
+
+**Path can be relative to the Markdown file (using `./` as the start of the path like in the example) or they can be absolute by using
+a path starting with `Assets/` like `Assets/Docs/Styles/myStyle.uss`**  
+
+_Note: there is no actual YAML parsing, the system only supports uss as a key for now_
 
 # MarkdownDoc Attribute
 

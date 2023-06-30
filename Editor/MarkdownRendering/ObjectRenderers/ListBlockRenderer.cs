@@ -16,7 +16,7 @@ namespace Unity.Markdown.ObjectRenderers
             if(attribute.Classes != null)
                 classes.AddRange(attribute.Classes);
             
-            renderer.StartNewText(classes.ToArray());
+            renderer.StartNewText(classes);
 
             bool lockValue = renderer.LockTextCreation;
             renderer.LockTextCreation = true;

@@ -249,10 +249,17 @@ namespace Unity.Markdown
             }
             
             var stylesheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
+
+            if (stylesheet == null)
+            {
+                Debug.LogError($"Couldn't find custom USS {path} defined in file {s_StaticRenderer.m_LocalFilePath}");
+                return;
+            }
+            
             m_CustomStylesheets.Add(stylesheet);
         }
 
-        public void StartNewText(params string[] classLists)
+        public void StartNewText(List<string> classLists)
         {
             if (LockTextCreation)
                 return;
@@ -264,6 +271,11 @@ namespace Unity.Markdown
             }
 
             m_BlockStack.Peek().Add(m_CurrentBlockText);
+        }
+
+        public void StartNewText(params string[] classLists)
+        {
+            StartNewText(classLists.ToList());
         }
 
         public void WriteText(string text)
@@ -386,8 +398,8 @@ namespace Unity.Markdown
 
             return null;
         }
-
-        internal void StartBlock(params string[] classList)
+        
+        internal void StartBlock(List<string> classList)
         {
             if (LockTextCreation)
                 return;
@@ -402,6 +414,11 @@ namespace Unity.Markdown
             m_BlockStack.Peek().Add(newBlock);
 
             m_BlockStack.Push(newBlock);
+        }
+
+        internal void StartBlock(params string[] classList)
+        {
+            StartBlock(classList.ToList());
         }
 
         internal void FinishBlock()

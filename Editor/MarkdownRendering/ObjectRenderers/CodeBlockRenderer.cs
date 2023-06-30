@@ -14,7 +14,7 @@ namespace Unity.Markdown.ObjectRenderers
             if(attribute.Classes != null)
                 classes.AddRange(attribute.Classes);
             
-            renderer.StartBlock("codeblock");
+            renderer.StartBlock(classes);
 
             renderer.StartNewText();
             renderer.WriteLeafRawLines( obj );

@@ -31,7 +31,7 @@ namespace Unity.Markdown.ObjectRenderers
             if(attribute.Classes != null)
                 classes.AddRange(attribute.Classes);
             
-            renderer.StartNewText(classes.ToArray());
+            renderer.StartNewText(classes);
             renderer.WriteLeafBlockInline( obj );
 
             renderer.FinishBlock();

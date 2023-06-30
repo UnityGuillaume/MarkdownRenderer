@@ -14,7 +14,7 @@ namespace Unity.Markdown.ObjectRenderers
             if (attribute.Classes != null)
                 classes.AddRange(attribute.Classes);
 
-            renderer.StartBlock(classes.ToArray());
+            renderer.StartBlock(classes);
             renderer.WriteChildren(obj);
             renderer.FinishBlock();
         }
