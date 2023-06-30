@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Markdig.Renderers;
+using Markdig.Renderers.Html;
 using Markdig.Syntax;
 
 namespace Unity.Markdown.ObjectRenderers
@@ -24,7 +26,12 @@ namespace Unity.Markdown.ObjectRenderers
         
             renderer.StartBlock();
 
-            renderer.StartNewText(headingText, "header");
+            var attribute = obj.GetAttributes();
+            List<string> classes = new () { headingText, "header" };
+            if(attribute.Classes != null)
+                classes.AddRange(attribute.Classes);
+            
+            renderer.StartNewText(classes);
             renderer.WriteLeafBlockInline( obj );
 
             renderer.FinishBlock();

@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Markdig.Renderers;
+using Markdig.Renderers.Html;
 using Markdig.Syntax;
 
 namespace Unity.Markdown.ObjectRenderers
@@ -9,7 +11,12 @@ namespace Unity.Markdown.ObjectRenderers
         {
             renderer.StartBlock();
 
-            renderer.StartNewText("list");
+            var attribute = obj.GetAttributes();
+            List<string> classes = new () { "list" };
+            if(attribute.Classes != null)
+                classes.AddRange(attribute.Classes);
+            
+            renderer.StartNewText(classes);
 
             bool lockValue = renderer.LockTextCreation;
             renderer.LockTextCreation = true;
