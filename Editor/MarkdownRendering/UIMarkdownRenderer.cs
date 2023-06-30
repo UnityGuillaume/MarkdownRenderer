@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Markdig;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
@@ -17,6 +18,7 @@ namespace Unity.Markdown
     {
         private static StyleSheet s_DefaultStylesheet = null;
         private static UIMarkdownRenderer s_StaticRenderer = null;
+        private static MarkdownPipeline s_StaticPipeline;
 
         public class Command
         {
@@ -34,6 +36,7 @@ namespace Unity.Markdown
 
         private Stack<VisualElement> m_BlockStack = new Stack<VisualElement>();
 
+        private string m_LocalFilePath;
         //useful when using relative file path
         private string m_FileFolder;
 
@@ -52,6 +55,8 @@ namespace Unity.Markdown
         private Action<string> m_CurrentLinkHandler;
 
         private CommandHandlerDelegate m_CommandHandler;
+
+        private List<StyleSheet> m_CustomStylesheets;
 
         class LinkData
         {
@@ -81,12 +86,18 @@ namespace Unity.Markdown
             if (s_StaticRenderer == null)
             {
                 s_StaticRenderer = new UIMarkdownRenderer();
+                s_StaticPipeline = new MarkdownPipelineBuilder().UseGenericAttributes().UseYamlFrontMatter().Build();
             }
 
             s_StaticRenderer.m_CurrentLinkHandler = LinkHandler;
-            s_StaticRenderer.m_FileFolder = System.IO.Path.GetDirectoryName(filePath).Replace("Assets", Application.dataPath);
+            s_StaticRenderer.m_LocalFilePath = System.IO.Path.GetDirectoryName(filePath);
+            s_StaticRenderer.m_FileFolder = s_StaticRenderer.m_LocalFilePath.Replace("Assets", Application.dataPath);
 
-            s_StaticRenderer.Render(Markdig.Markdown.Parse(markdownText));
+            s_StaticRenderer.m_CustomStylesheets = new List<StyleSheet>();
+
+            var parsed = Markdig.Markdown.Parse(markdownText, s_StaticPipeline);
+
+            s_StaticRenderer.Render(parsed);
 
             VisualElement returnElem = null;
             if (includeScrollview)
@@ -101,6 +112,11 @@ namespace Unity.Markdown
             
             if(s_DefaultStylesheet != null)
                 returnElem.styleSheets.Add(s_DefaultStylesheet);
+
+            foreach (var stylesheet in s_StaticRenderer.m_CustomStylesheets)
+            {
+                returnElem.styleSheets.Add(stylesheet);
+            }
 
             return returnElem;
         }
@@ -151,6 +167,8 @@ namespace Unity.Markdown
         {
             m_LoadingTexture = EditorGUIUtility.Load("WaitSpin00") as Texture;
 
+            ObjectRenderers.Add(new YamlFrontMatterHandler());
+            
             ObjectRenderers.Add(new ParagraphBlockRenderer());
             ObjectRenderers.Add(new HeadingBlockRenderer());
             ObjectRenderers.Add(new ListBlockRenderer());
@@ -163,8 +181,8 @@ namespace Unity.Markdown
             ObjectRenderers.Add(new LineBreakInlineRenderer());
             ObjectRenderers.Add(new CodeInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
-            
-            #if UNITY_2022_1_OR_NEWER
+
+#if UNITY_2022_1_OR_NEWER
             string handleName = "uitkTextHandle";
             string textHandleTypeName = "UnityEngine.TextCore.Text.TextHandle, UnityEngine.TextCoreTextEngineModule";
             string textInfoName = "m_TextInfo";
@@ -221,6 +239,17 @@ namespace Unity.Markdown
                 
                 WriteText(line);
             }
+        }
+
+        public void AddCustomUSS(string path)
+        {
+            if (path.StartsWith("."))
+            {
+                path = s_StaticRenderer.m_LocalFilePath + path.Remove(0, 1);
+            }
+            
+            var stylesheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
+            m_CustomStylesheets.Add(stylesheet);
         }
 
         public void StartNewText(params string[] classLists)
