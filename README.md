@@ -1,5 +1,7 @@
 # Markdown UIElement
 
+**This package is neither endorsed nor supported by Unity, this is a personal project**
+
 This package add rendering of markdown file in Unity by using UIElement.
 
 > This has only been tested in 2021.3 LTS and a bit 2022.2. As this use some Reflection to
