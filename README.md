@@ -117,6 +117,10 @@ This paragraph will have .test-class class assigned to it
 > Not this line though
 ```
 
+As a note for image, you need to place the custom class **AFTER THE IMAGE LINE** as if you add it before, it will apply it the block before the image
+
+`![Image](./path/to/image) {.classToApplyToImage}`
+
 ### Custom USS files
 
 In addition to custom classes on elements in Markdown, you can specify a USS file to be used to render that file.

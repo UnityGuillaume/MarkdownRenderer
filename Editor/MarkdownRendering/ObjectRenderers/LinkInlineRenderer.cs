@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Markdig.Renderers;
+using Markdig.Renderers.Html;
 using Markdig.Syntax.Inlines;
 using UnityEditor;
 using UnityEngine;
@@ -46,6 +48,15 @@ namespace UIMarkdownRenderer.ObjectRenderers
                 var uwr = new UnityWebRequest(link, UnityWebRequest.kHttpVerbGET);
                 var imgElem = renderer.AddImage();
                 
+                var attribute = obj.GetAttributes();
+                if (attribute.Classes != null)
+                {
+                    foreach (var c in attribute.Classes)
+                    {
+                        imgElem.AddToClassList(c);
+                    }
+                }
+
                 uwr.downloadHandler = new DownloadHandlerTexture();
                 var asyncOp = uwr.SendWebRequest();
                 

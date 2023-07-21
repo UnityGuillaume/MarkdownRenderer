@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.1.1] - XXXX-XX-XX
+
+### Fixed
+
+- Image now have attribute applied properly (check Readme for placement)
+- Fixed some naming
+
 ## [1.1.0] - 2023-06-30
 
 ### Added 
