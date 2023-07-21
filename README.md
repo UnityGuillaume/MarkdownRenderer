@@ -57,6 +57,17 @@ file. The handler look for `..` and `.` at the start of a path to make it relati
 _Note that explicit file protocol, `file://./doc/image.png` will **not work** as the system won't be able
 to modify the path to the current folder of the MD file_
 
+## Absolute path
+
+The system can handle absolute path in the of form of
+
+`Assets/Folder/SubFolder/file.png`
+
+It can also handle package path (refers to the documentation on [accessing packages assets](https://docs.unity3d.com/Manual/upm-assets.html) 
+for how those path works). As an example to access this file you would use the path
+
+`Packages/com.rtl.markdownrenderer/Readme.md`
+
 ## Search path
 
 A special handler for this Unity implementation is the `![My Image](search:special_doc)` link type.
@@ -69,6 +80,15 @@ This will search for a file called `special_doc` in the Assets folder, and will 
   - To highlight and select any other asset your doc may want to point to (prefab, image, script etc.)
 
 Note however that it doesn't support multiple file with the same name and will always return the first found.
+
+## Package search path
+
+The package search path works as the Search path but will only search in packages. 
+
+`package:my_image.png`
+
+There is no way to search in a specific packages, this will search in all packages, but will ignore the Assets folder. This is useful to avoid
+having your package users files found by your search path.
 
 ## Commands
 

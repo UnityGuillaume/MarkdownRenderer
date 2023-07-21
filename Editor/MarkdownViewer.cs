@@ -85,32 +85,12 @@ namespace UIMarkdownRenderer
 
         public static void HandleLink(string link, TextAsset context)
         {
-            if (link.StartsWith("file://"))
+            if (link.StartsWith("Assets") || link.StartsWith("Packages"))
             {
-                //relative link
-                //remove the handler type
-                var cleanPath = link.Replace("file://", "");
-
-                if (cleanPath.StartsWith("Assets") || cleanPath.StartsWith("./") || cleanPath.StartsWith("../"))
-                {
-                    var combined = "";
-                    if (!cleanPath.StartsWith("Assets"))
-                    {
-                        var assetPath = AssetDatabase.GetAssetPath(context);
-                        assetPath = Path.GetDirectoryName(assetPath);
-                        combined = Path.GetFullPath(Path.Join(assetPath, cleanPath)).Replace("\\", "/");
-                        combined = combined.Replace(Application.dataPath, "Assets");
-                    }
-                    else
-                    {
-                        combined = cleanPath;
-                    }
-
-                    var obj = AssetDatabase.LoadAssetAtPath<Object>(combined);
-                    Selection.activeObject = obj;
-                }
+                var obj = AssetDatabase.LoadAssetAtPath<Object>(link);
+                Selection.activeObject = obj;
             }
-            else if (link.StartsWith("search"))
+            else if (link.StartsWith("search:"))
             {
                 //this is a relative link, so find the actual link
                 link = link.Replace("search:", "");
@@ -119,12 +99,30 @@ namespace UIMarkdownRenderer
 
                 if (files.Length == 0)
                 {
+                    Debug.LogError($"Couldn't find file {link}");
+                    return;
+                }
+
+                link = AssetDatabase.GUIDToAssetPath(files[0]);
+                var obj = AssetDatabase.LoadAssetAtPath<Object>(link);
+                Selection.activeObject = obj;
+            }
+            else if (link.StartsWith("package:"))
+            {
+                //will search only in packages
+                link = link.Replace("package:", "");
+
+                var files = AssetDatabase.FindAssets($"a:packages {link}");
+
+                if (files.Length == 0)
+                {
                     Debug.LogError($"Couldn't find link : {link}");
                     return;
                 }
 
-                var path = AssetDatabase.GUIDToAssetPath(files[0]);
-                Selection.activeObject = AssetDatabase.LoadAssetAtPath<Object>(path);
+                link = AssetDatabase.GUIDToAssetPath(files[0]);
+                var obj = AssetDatabase.LoadAssetAtPath<Object>(link);
+                Selection.activeObject = obj;
             }
             else if (link.StartsWith("cmd:"))
             {

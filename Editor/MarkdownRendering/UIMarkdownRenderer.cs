@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Markdig;
@@ -91,9 +92,8 @@ namespace UIMarkdownRenderer
             }
 
             s_StaticRenderer.m_CurrentLinkHandler = LinkHandler;
-            s_StaticRenderer.m_LocalFilePath = System.IO.Path.GetDirectoryName(filePath);
-            s_StaticRenderer.m_FileFolder = s_StaticRenderer.m_LocalFilePath.Replace("Assets", Application.dataPath);
-
+            s_StaticRenderer.m_LocalFilePath = Path.GetDirectoryName(filePath);
+            s_StaticRenderer.m_FileFolder = Path.GetFullPath(s_StaticRenderer.m_LocalFilePath);
             s_StaticRenderer.m_CustomStylesheets = new List<StyleSheet>();
 
             var parsed = Markdig.Markdown.Parse(markdownText, s_StaticPipeline);
@@ -120,6 +120,54 @@ namespace UIMarkdownRenderer
             }
 
             return returnElem;
+        }
+
+        //Call to handle all type of link : relative, absolute and special search
+        public static string ResolveLink(string link)
+        {
+            if (link.StartsWith("search:"))
+            {
+                //this is a relative link, so find the actual link
+                link = link.Replace("search:", "");
+
+                var files = AssetDatabase.FindAssets(link);
+
+                if (files.Length == 0)
+                {
+                    Debug.LogError($"Couldn't find image {link}");
+                    return "";
+                }
+
+                link = AssetDatabase.GUIDToAssetPath(files[0]);
+            }
+            else if (link.StartsWith("package:"))
+            {
+                //will search only in packages
+                link = link.Replace("package:", "");
+                    
+                var files = AssetDatabase.FindAssets($"a:packages {link}");
+
+                if (files.Length == 0)
+                {
+                    Debug.LogError($"Couldn't find link : {link}");
+                    return "";
+                }
+
+                link = AssetDatabase.GUIDToAssetPath(files[0]);
+            }
+            else if (link.StartsWith(".") || link.StartsWith(".."))
+            {
+                link = "/" + link;
+                link = s_StaticRenderer.FileFolder + link;
+            }
+            else if (link.StartsWith("Packages") || link.StartsWith("Assets"))
+            {
+                link = Path.GetFullPath(link);
+            }
+
+            link = link.Replace("\\", "/");
+
+            return link;
         }
 
         public static void RegisterCommandHandler(CommandHandlerDelegate handler)
