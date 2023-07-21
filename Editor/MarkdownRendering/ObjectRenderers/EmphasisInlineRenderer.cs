@@ -1,7 +1,7 @@
 using Markdig.Renderers;
 using Markdig.Syntax.Inlines;
 
-namespace Unity.Markdown.ObjectRenderers
+namespace UIMarkdownRenderer.ObjectRenderers
 {
     public class EmphasisInlineRenderer : MarkdownObjectRenderer<UIMarkdownRenderer, EmphasisInline>
     {

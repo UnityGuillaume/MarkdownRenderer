@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Unity.Markdown.ObjectRenderers
+namespace UIMarkdownRenderer.ObjectRenderers
 {
     public class LinkInlineRenderer : MarkdownObjectRenderer<UIMarkdownRenderer, LinkInline>
     {

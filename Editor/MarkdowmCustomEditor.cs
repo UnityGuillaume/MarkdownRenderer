@@ -1,12 +1,12 @@
 using System;
 using System.IO;
-using Unity.Markdown;
+using UIMarkdownRenderer;
 using UnityEditor;
 using UnityEditor.AssetImporters;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace MarkdowRenderer
+namespace UIMarkdownRenderer
 { 
      [CustomEditor(typeof(TextAsset))]
      public class MarkdownCustomEditor : Editor

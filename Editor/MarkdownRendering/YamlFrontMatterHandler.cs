@@ -2,25 +2,28 @@ using System.Collections;
 using System.Collections.Generic;
 using Markdig.Extensions.Yaml;
 using Markdig.Renderers;
-using Unity.Markdown;
+using UIMarkdownRenderer;
 using UnityEngine;
 
-//This is not a renderer as we ignore the YAML front matter block and only use its data
-public class YamlFrontMatterHandler : MarkdownObjectRenderer<UIMarkdownRenderer, YamlFrontMatterBlock>
+namespace UIMarkdownRenderer
 {
-    protected override void Write(UIMarkdownRenderer renderer, YamlFrontMatterBlock obj)
+    //This is not a renderer as we ignore the YAML front matter block and only use its data
+    public class YamlFrontMatterHandler : MarkdownObjectRenderer<UIMarkdownRenderer, YamlFrontMatterBlock>
     {
-        //we do not handle real YAML as for now we only support specific uss, so manually parse
-        foreach (var line in obj.Lines)
+        protected override void Write(UIMarkdownRenderer renderer, YamlFrontMatterBlock obj)
         {
-            var data = line.ToString();
-            if(string.IsNullOrEmpty(data)) continue;
-
-            string[] content = data.Split(':');
-            if (content[0].Trim() == "uss")
+            //we do not handle real YAML as for now we only support specific uss, so manually parse
+            foreach (var line in obj.Lines)
             {
-                string path = content[1].Trim();
-                renderer.AddCustomUSS(path);
+                var data = line.ToString();
+                if(string.IsNullOrEmpty(data)) continue;
+
+                string[] content = data.Split(':');
+                if (content[0].Trim() == "uss")
+                {
+                    string path = content[1].Trim();
+                    renderer.AddCustomUSS(path);
+                }
             }
         }
     }

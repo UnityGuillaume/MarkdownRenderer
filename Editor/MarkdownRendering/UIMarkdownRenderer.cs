@@ -6,13 +6,14 @@ using Markdig;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
-using Unity.Markdown.ObjectRenderers;
+using UIMarkdownRenderer.ObjectRenderers;
+using UIMarkdownRenderer;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using TextElement = UnityEngine.UIElements.TextElement;
 
-namespace Unity.Markdown
+namespace UIMarkdownRenderer
 {
     public class UIMarkdownRenderer : RendererBase
     {

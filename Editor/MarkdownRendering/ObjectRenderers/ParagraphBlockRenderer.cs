@@ -3,7 +3,7 @@ using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
 
-namespace Unity.Markdown.ObjectRenderers
+namespace UIMarkdownRenderer.ObjectRenderers
 {
     public class ParagraphBlockRenderer : MarkdownObjectRenderer<UIMarkdownRenderer, ParagraphBlock>
     {
