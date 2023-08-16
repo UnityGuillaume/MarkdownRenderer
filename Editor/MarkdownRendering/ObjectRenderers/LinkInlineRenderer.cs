@@ -25,10 +25,10 @@ namespace UIMarkdownRenderer.ObjectRenderers
             else
             {
                 link = UIMarkdownRenderer.ResolveLink(link);
-                
-                if(!link.StartsWith("http"))
-                    link = "file://"+Path.GetFullPath(link);
-                
+
+                if (!link.StartsWith("http"))
+                    link = "file://" + Path.Combine(renderer.FileFolder, link);
+
                 var uwr = new UnityWebRequest(link, UnityWebRequest.kHttpVerbGET);
                 var imgElem = renderer.AddImage();
                 

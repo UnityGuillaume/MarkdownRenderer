@@ -10,34 +10,33 @@ namespace UIMarkdownRenderer
 {
     public class MarkdownViewer : EditorWindow
     {
-        private TextAsset m_Asset;
+        private string m_Path;
 
         [OnOpenAsset(0)]
         public static bool HandleDblClick(int instanceID, int line)
         {
             var path = AssetDatabase.GetAssetPath(instanceID);
-            if (path.Contains(".md"))
+
+            if (Path.GetExtension(path) == ".md")
             {
-                Open(EditorUtility.InstanceIDToObject(instanceID) as TextAsset);
-                return true; 
+                Open(path);
+                return true;
             }
-        
-        
-        
+
             return false;
         }
 
         [MenuItem("Window/Markdown Doc Viewer")]
-        static void DisplayWindow()
+        public static void DisplayWindow()
         {
             var win = GetWindow<MarkdownViewer>();
             win.Show();
         }
 
-        static void Open(TextAsset asset)
+        public static void Open(string path)
         {
             var win = GetWindow<MarkdownViewer>();
-            win.m_Asset = asset;
+            win.m_Path = path;
 
             win.Setup();
         }
@@ -56,10 +55,7 @@ namespace UIMarkdownRenderer
                         var files = AssetDatabase.FindAssets($"{attribute.DocName} t:TextAsset");
                         if (files.Length > 0)
                         {
-                            var textAsset =
-                                AssetDatabase.LoadAssetAtPath<TextAsset>(AssetDatabase.GUIDToAssetPath(files[0]));
-
-                            m_Asset = textAsset;
+                            m_Path = AssetDatabase.GUIDToAssetPath(files[0]);
                             Setup();
                         }
                     }
@@ -71,7 +67,7 @@ namespace UIMarkdownRenderer
 
                 if (Path.GetExtension(path) == ".md")
                 {
-                    m_Asset = txtAsset;
+                    m_Path = path;
                     Setup();
                 }
             }
@@ -80,10 +76,10 @@ namespace UIMarkdownRenderer
         void Setup()
         { 
             rootVisualElement.Clear();
-            rootVisualElement.Add(UIMarkdownRenderer.GenerateVisualElement(m_Asset.text, (lnk) => HandleLink(lnk, m_Asset), true, AssetDatabase.GetAssetPath(m_Asset)));
+            rootVisualElement.Add(UIMarkdownRenderer.GenerateVisualElement(File.ReadAllText(m_Path), lnk => HandleLink(lnk, m_Path), true, m_Path));
         }
 
-        public static void HandleLink(string link, TextAsset context)
+        public static void HandleLink(string link, string filePath)
         {
             if (link.StartsWith("Assets") || link.StartsWith("Packages"))
             {
