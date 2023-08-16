@@ -13,11 +13,11 @@ namespace UIMarkdownRenderer
      {
          private Editor m_DefaultEditor;
          private bool m_IsMDFile;
-         private TextAsset m_Target;
+         private string m_TargetPath;
 
         public virtual void OnEnable()
         {
-            m_Target = target as TextAsset;
+            m_TargetPath = AssetDatabase.GetAssetPath(target);
 
             var assembly = typeof(Editor).Assembly;
             var type = assembly.GetType("UnityEditor.TextAssetInspector");
@@ -32,7 +32,7 @@ namespace UIMarkdownRenderer
         {
             if (m_IsMDFile)
             {
-                return UIMarkdownRenderer.GenerateVisualElement(m_Target.text, (lnk) => { MarkdownViewer.HandleLink(lnk, m_Target);}, true, AssetDatabase.GetAssetPath(m_Target));
+                return UIMarkdownRenderer.GenerateVisualElement(File.ReadAllText(m_TargetPath), lnk => MarkdownViewer.HandleLink(lnk, m_TargetPath), true, m_TargetPath);
             }
 
             var elem = new IMGUIContainer(m_DefaultEditor.OnInspectorGUI);
