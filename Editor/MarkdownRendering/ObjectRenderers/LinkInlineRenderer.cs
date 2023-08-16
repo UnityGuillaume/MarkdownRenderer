@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Markdig.Renderers;
@@ -47,7 +48,17 @@ namespace UIMarkdownRenderer.ObjectRenderers
 
                 asyncOp.completed += operation =>
                 {
-                    imgElem.image = DownloadHandlerTexture.GetContent(uwr);
+                    try
+                    {
+                        imgElem.image = DownloadHandlerTexture.GetContent(uwr);
+                    }
+                    catch (Exception x)
+                    {
+                        if (!x.Message.StartsWith("HTTP/1.1 404"))
+                            throw;
+
+                        Debug.LogWarning($"{x.Message}: {link}");
+                    }
                     uwr.Dispose();
                 };
             }
