@@ -138,7 +138,7 @@ namespace UIMarkdownRenderer
                     return "";
                 }
 
-                link = AssetDatabase.GUIDToAssetPath(files[0]);
+                link = Path.GetFullPath(AssetDatabase.GUIDToAssetPath(files[0]));
             }
             else if (link.StartsWith("package:"))
             {
@@ -153,7 +153,7 @@ namespace UIMarkdownRenderer
                     return "";
                 }
 
-                link = AssetDatabase.GUIDToAssetPath(files[0]);
+                link = Path.GetFullPath(AssetDatabase.GUIDToAssetPath(files[0]));
             }
             else if (link.StartsWith(".") || link.StartsWith(".."))
             {
