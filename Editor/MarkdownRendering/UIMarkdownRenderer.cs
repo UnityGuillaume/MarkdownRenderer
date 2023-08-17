@@ -47,6 +47,14 @@ namespace UIMarkdownRenderer
         private Label m_CurrentBlockText;
         private Texture m_LoadingTexture;
 
+        //used for jumping to header, the key is a whitespace removed version of the header
+        public struct HeaderEntry
+        {
+            public string HeaderKey;
+            public Label HeaderLabel;
+        }
+        private List<HeaderEntry> m_HeadersToLabelMappings = new();
+
 #if !UNITY_2022_2_OR_NEWER
         private PropertyInfo m_TextHandleFieldInfo;
         private PropertyInfo m_TextInfoFieldInfo;
@@ -99,6 +107,8 @@ namespace UIMarkdownRenderer
             s_StaticRenderer.m_LocalFilePath = Path.GetDirectoryName(filePath);
             s_StaticRenderer.m_FileFolder = Path.GetFullPath(s_StaticRenderer.m_LocalFilePath);
             s_StaticRenderer.m_CustomStylesheets = new List<StyleSheet>();
+            
+            s_StaticRenderer.m_HeadersToLabelMappings.Clear();
 
             var parsed = Markdig.Markdown.Parse(markdownText, s_StaticPipeline);
 
@@ -447,6 +457,49 @@ namespace UIMarkdownRenderer
             m_CurrentBlockText.text += "</u></color></link>";
         }
 
+        public void RegisterHeader(string headerText, Label label)
+        {
+            //we first change all space to - but also remove any non alpha numeric character 
+            var sanitizedHeader = headerText.Replace(" ", "-").ToLowerInvariant();
+            sanitizedHeader = String.Concat(sanitizedHeader.Where(c => char.IsLetterOrDigit(c) || c == '-'));
+            
+            m_HeadersToLabelMappings.Add(new HeaderEntry()
+            {
+                HeaderKey = sanitizedHeader,
+                HeaderLabel = label
+            });
+        }
+
+        public static void ScrollToHeader(string link)
+        {
+            foreach (var headerEntry in s_StaticRenderer.m_HeadersToLabelMappings)
+            {
+                if (headerEntry.HeaderKey.StartsWith(link.Remove(0, 1)))
+                {
+                    //TODO : feel pretty inefficient
+                    //As link handler doesn't know about the VisualElement hierarchy (e.g. both Inspector and Viewer use
+                    //the link handler) easier to find the scroll view here, but this feel inneficient
+
+                    var label = headerEntry.HeaderLabel;
+                    var currentParent = label.parent;
+
+                    while (currentParent != null && currentParent is not ScrollView)
+                    {
+                        currentParent = currentParent.parent;
+                    }
+
+                    if (currentParent != null)
+                    {
+                        var scrollView = currentParent as ScrollView;
+                        var localLabelPos = scrollView.WorldToLocal(label.worldBound);
+                        scrollView.scrollOffset = new Vector2(scrollView.scrollOffset.x, localLabelPos.y);
+                    }
+
+                    return;
+                }
+            }
+        }
+
 
 #if !UNITY_2022_2_OR_NEWER
         LinkInfoCopy CheckLinkAgainstCursor(Label target, Vector2 localMousePosition)
@@ -479,10 +532,10 @@ namespace UIMarkdownRenderer
         }
 #endif
         
-        internal void StartBlock(List<string> classList)
+        internal VisualElement StartBlock(List<string> classList)
         {
             if (LockTextCreation)
-                return;
+                return null;
 
             var newBlock = new VisualElement();
             newBlock.AddToClassList("block");
@@ -494,11 +547,13 @@ namespace UIMarkdownRenderer
             m_BlockStack.Peek().Add(newBlock);
 
             m_BlockStack.Push(newBlock);
+
+            return newBlock;
         }
 
-        internal void StartBlock(params string[] classList)
+        internal VisualElement StartBlock(params string[] classList)
         {
-            StartBlock(classList.ToList());
+            return StartBlock(classList.ToList());
         }
 
         internal void FinishBlock()

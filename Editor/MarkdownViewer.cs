@@ -81,7 +81,11 @@ namespace UIMarkdownRenderer
 
         public static void HandleLink(string link, string filePath)
         {
-            if (link.StartsWith("Assets") || link.StartsWith("Packages"))
+            if (link.StartsWith("#"))
+            {
+                UIMarkdownRenderer.ScrollToHeader(link);
+            }
+            else if (link.StartsWith("Assets") || link.StartsWith("Packages"))
             {
                 var obj = AssetDatabase.LoadAssetAtPath<Object>(link);
                 Selection.activeObject = obj;
