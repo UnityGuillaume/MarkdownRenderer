@@ -10,8 +10,10 @@ using Markdig.Syntax.Inlines;
 using UIMarkdownRenderer.ObjectRenderers;
 using UIMarkdownRenderer;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.UIElements.Experimental;
 using TextElement = UnityEngine.UIElements.TextElement;
 
 namespace UIMarkdownRenderer
@@ -45,27 +47,29 @@ namespace UIMarkdownRenderer
         private Label m_CurrentBlockText;
         private Texture m_LoadingTexture;
 
+#if !UNITY_2022_2_OR_NEWER
         private PropertyInfo m_TextHandleFieldInfo;
-        private FieldInfo m_TextInfoFieldInfo;
+        private PropertyInfo m_TextInfoFieldInfo;
 
         private Type m_TextElementInfoType;
         private FieldInfo m_TextElementInfoFieldInfo;
 
         private Type m_LinkInfoType;
         private FieldInfo m_LinkFieldInfo;
-
-        private Action<string> m_CurrentLinkHandler;
-
-        private CommandHandlerDelegate m_CommandHandler;
-
-        private List<StyleSheet> m_CustomStylesheets;
-
+        
         class LinkData
         {
             public List<LinkInfoCopy> LinkInfo;
             public List<TextElementInfoCopy> TextElementInfo;
             public bool HoveredIconDisplayed;
         }
+#endif
+
+        private Action<string> m_CurrentLinkHandler;
+
+        private CommandHandlerDelegate m_CommandHandler;
+
+        private List<StyleSheet> m_CustomStylesheets;
 
         public override object Render(MarkdownObject markdownObject)
         {
@@ -230,22 +234,23 @@ namespace UIMarkdownRenderer
             ObjectRenderers.Add(new LineBreakInlineRenderer());
             ObjectRenderers.Add(new CodeInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
-
+            
+#if UNITY_2022_2_OR_NEWER
+            //In 2022.2 and after there is even when hovering over link in label so we can use that!
+#else
 #if UNITY_2022_1_OR_NEWER
             string handleName = "uitkTextHandle";
             string textHandleTypeName = "UnityEngine.TextCore.Text.TextHandle, UnityEngine.TextCoreTextEngineModule";
-            string textInfoName = "m_TextInfo";
-            #else 
+            string textInfoName = "textInfo";
+#else 
             string handleName = "textHandle";
             string textHandleTypeName = "UnityEngine.UIElements.TextCoreHandle, UnityEngine.UIElementsModule";
-            string textInfoName = "m_TextInfoMesh";
-            #endif
-            
-
-            m_TextHandleFieldInfo = typeof(TextElement).GetProperty(handleName, BindingFlags.NonPublic|BindingFlags.Instance);
+            string textInfoName = "textInfoMesh";
+#endif
+             m_TextHandleFieldInfo = typeof(TextElement).GetProperty(handleName, BindingFlags.NonPublic|BindingFlags.Instance);
             Type textCoreHandleType = Type.GetType(textHandleTypeName);
             m_TextInfoFieldInfo =
-                textCoreHandleType.GetField(textInfoName, BindingFlags.NonPublic | BindingFlags.Instance);
+                textCoreHandleType.GetProperty(textInfoName, BindingFlags.NonPublic | BindingFlags.Instance);
 
             Type textInfoType =
                 Type.GetType("UnityEngine.TextCore.Text.TextInfo, UnityEngine.TextCoreTextEngineModule");
@@ -256,7 +261,7 @@ namespace UIMarkdownRenderer
             m_LinkInfoType = Type.GetType("UnityEngine.TextCore.Text.LinkInfo, UnityEngine.TextCoreTextEngineModule");
             m_TextElementInfoType =
                 Type.GetType("UnityEngine.TextCore.Text.TextElementInfo, UnityEngine.TextCoreTextEngineModule");
-
+#endif
             m_CommandHandler += DefaultCommandHandler;
         }
 
@@ -347,6 +352,7 @@ namespace UIMarkdownRenderer
             return imgElement;
         }
 
+#if !UNITY_2022_2_OR_NEWER
         public void OpenLink(string linkTarget)
         {
             if (m_CurrentBlockText.userData == null)
@@ -371,18 +377,14 @@ namespace UIMarkdownRenderer
 
             m_CurrentBlockText.text += "<link=" + linkTarget + "><color=#4C7EFF><u>";
         }
-
-        public void CloseLink()
-        {
-            m_CurrentBlockText.text += "</u></color></link>";
-        }
-
+        
+        
         void MouseMoveOnLink(MouseMoveEvent evt)
         {
             var label = evt.target as Label;
             var linkData = label.userData as LinkData;
             var link = CheckLinkAgainstCursor(label, evt.localMousePosition);
-
+            
             if (link == null)
             {
                 if (linkData.HoveredIconDisplayed)
@@ -419,7 +421,34 @@ namespace UIMarkdownRenderer
                 label.RemoveFromClassList("linkHovered");
             }
         }
+#else
+        
+        public void OpenLink(string linkTarget)
+        {
+            m_CurrentBlockText.text += "<link=" + linkTarget + "><color=#4C7EFF><u>";
+            m_CurrentBlockText.RegisterCallback<PointerOverLinkTagEvent>(evt =>
+            {
+                (evt.target as Label).AddToClassList("linkHovered");
+            });
+            m_CurrentBlockText.RegisterCallback<PointerOutLinkTagEvent>(evt =>
+            {
+                (evt.target as Label).RemoveFromClassList("linkHovered");
+            });
+            
+            m_CurrentBlockText.RegisterCallback<PointerUpLinkTagEvent>(evt =>
+            {
+                m_CurrentLinkHandler(evt.linkID);
+            });
+        }
+    #endif
 
+        public void CloseLink()
+        {
+            m_CurrentBlockText.text += "</u></color></link>";
+        }
+
+
+#if !UNITY_2022_2_OR_NEWER
         LinkInfoCopy CheckLinkAgainstCursor(Label target, Vector2 localMousePosition)
         {
             var data = target.userData as LinkData;
@@ -429,12 +458,13 @@ namespace UIMarkdownRenderer
 
             var localPosInvert = localMousePosition;
             localPosInvert.y = target.localBound.height - localPosInvert.y;
-
+            
             foreach (var link in data.LinkInfo)
             {
                 for (int i = 0; i < link.linkTextLength; i++)
                 {
                     var textInfo = data.TextElementInfo[link.linkTextfirstCharacterIndex + i];
+
                     Rect r = new Rect(textInfo.bottomLeft,
                         new Vector2(textInfo.topRight.x - textInfo.topLeft.x, textInfo.topLeft.y - textInfo.bottomLeft.y));
                     
@@ -447,6 +477,7 @@ namespace UIMarkdownRenderer
 
             return null;
         }
+#endif
         
         internal void StartBlock(List<string> classList)
         {
@@ -479,14 +510,17 @@ namespace UIMarkdownRenderer
                 return;
             }
 
+#if !UNITY_2022_2_OR_NEWER
             if (m_CurrentBlockText.userData != null)
             {
-                m_CurrentBlockText.generateVisualContent = m_CurrentBlockText.generateVisualContent + OnGenerateLinkVisualContent;
+                m_CurrentBlockText.generateVisualContent += OnGenerateLinkVisualContent;
             }
+#endif
             
             m_BlockStack.Pop(); 
         }
 
+#if !UNITY_2022_2_OR_NEWER
         void OnGenerateLinkVisualContent(MeshGenerationContext ctx)
         {
             Label l = ctx.visualElement as Label;
@@ -498,7 +532,9 @@ namespace UIMarkdownRenderer
             
             var linkInfoArray = m_LinkFieldInfo.GetValue(textInfo) as Array;
             var textElementInfoArray = m_TextElementInfoFieldInfo.GetValue(textInfo) as Array;
-
+            
+            Debug.Log((ctx.visualElement as Label).text);
+            
             data.TextElementInfo = new List<TextElementInfoCopy>();
             foreach (var obj in textElementInfoArray)
             {
@@ -512,8 +548,11 @@ namespace UIMarkdownRenderer
             {
                 LinkInfoCopy cpy = new LinkInfoCopy();
                 CopyFromTo(m_LinkInfoType, itm, ref cpy);
+                Debug.Log("Link info copied");
                 data.LinkInfo.Add(cpy);
             }
+            
+            Debug.Log($"Data link info length {data.LinkInfo.Count}");
             
         }
 
@@ -533,10 +572,12 @@ namespace UIMarkdownRenderer
                 }
             }
         }
+#endif
 
         //Those are just copy of the internal class in TextCore to easily copy the content of those by reflection as their
         //counterpart are internal. If this is exposed someday, can be removed.
     
+#if !UNITY_2022_2_OR_NEWER
         internal class TextElementInfoCopy
         {
             public char character;
@@ -578,5 +619,7 @@ namespace UIMarkdownRenderer
     
             public string GetLinkId() => new string(this.linkId, 0, this.linkIdLength);
         }
+
+#endif
     }
 }

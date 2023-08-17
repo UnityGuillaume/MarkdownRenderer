@@ -4,8 +4,9 @@
 
 This package add rendering of markdown file in Unity by using UIElement.
 
-> This has only been tested in 2021.3 LTS and a bit 2022.2. As this use some Reflection to
-> access some text property, it may breaks on other versions
+> In Unity 2021.x and 2022.1, this will use reflection to handle links, so it could
+> break in some patch releases if those classes are changed.
+> 2022.2 and above use experimental link tag event and no reflection
 
 It will override the default inspector on .md file and offer a simple
 API to get a VisualElement root with the markdown as children to add to
