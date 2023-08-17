@@ -153,9 +153,17 @@ namespace UIMarkdownRenderer
                 
                 UIMarkdownRenderer.SendCommand(cmd);
             }
-
-            //any other link is open normally
-            Application.OpenURL(link);
+            else if (link.EndsWith(".md") || link.EndsWith(".txt"))
+            {
+                //this is a link to an external MD or text file so we open it with the viewer instead of using Application.OpenURL
+                Open(link);
+            }
+            else
+            {
+                 //any other link is open normally
+                Application.OpenURL(link);
+            }
+           
         }
     }
 }
