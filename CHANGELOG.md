@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
+## [1.2.0] - 2023-08-18
+
+- **Breaking Change** : UIMarkdown renderer is not static anymore. need to instance it to use it.
+
 ## [1.1.1] - 2023-07-21
 
 ### Fixed

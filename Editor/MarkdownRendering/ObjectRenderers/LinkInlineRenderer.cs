@@ -24,7 +24,7 @@ namespace UIMarkdownRenderer.ObjectRenderers
             }
             else
             {
-                link = UIMarkdownRenderer.ResolveLink(link);
+                link = renderer.ResolveLink(link);
 
                 if (!link.StartsWith("http"))
                     link = "file://" + Path.Combine(renderer.FileFolder, link);

@@ -15,6 +15,10 @@ you own windows and tools.
 It also include a special Attribute to display Markdown doc file for a given Monobehaviour and
 the Markdown implementation handle some special keyword link to simplify link in a Unity Project.
 
+> **Note on version 1.2.0** 1.2.0 introduce breaking change if you were rendering in your own tools.
+> The UIMarkdownRenderer now need to be instantiated and doesn't have static function anymore. This
+> allow to have multiple file open in different viewers without messing some internal references 
+
 - [Installation](#installation)
 - [Special syntax](#note-and-special-syntax)
   - [Relative Paths](#relative-path)
@@ -180,15 +184,19 @@ a doc file that is in `Assets/Tools/Docs/MyBehaviourDoc.md` the attribute `Markd
 
 # Render Markdown in your own tools
 
-The markdown renderer is using UIElement, so you can embed it in your own tools. 
+The markdown renderer is using UIElement, so you can embed it in your own tools.
 
-Just call
 
-```
-GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true, string filePath = "")
-```
+Create an instance of `UIMarkdowRenderer`. The parameters are : 
 
-- `markdownText` : the content of the markdown file to render
 - `linkHandler` : the function called when a link is clicked. MarkdownViewer contains a default one you can use or copy
 - `includeScrollview` : if the scrollview should be part of the returned VisualElement or not. Set to false if you want to put in your own scrollview.
-- `filePath` : the path to the rendered file. Used by the image rendering code to find relative path image. If you don't use relative path image, you can leave to empty.
+
+Then either call `OpenFile` or `SetMarkdown` to set the content. 
+
+- `OpenFile` : takes the path of the file. It is the better option as this will set proper path of the file, which is useful for relative path resolution
+- `SetMarkdown` : will just render the given markdown, but as there will be no idea what file it come from, relative path link (both image and link) won't work.
+
+Then you can add the `RootElement` from the UIMarkdownRenderer to any UIElement.
+
+Check out MarkdownViewer or MarkdownCustomEditor for an example of it being used.
