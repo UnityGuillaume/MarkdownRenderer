@@ -212,7 +212,7 @@ namespace UIMarkdownRenderer
             ObjectRenderers.Add(new LinkInlineRenderer());
             
 #if UNITY_2022_2_OR_NEWER
-            //In 2022.2 and after there is even when hovering over link in label so we can use that!
+            //In 2022.2 and after there is an event when hovering over link in a label so we can use that instead of reflection
 #else
 #if UNITY_2022_1_OR_NEWER
             string handleName = "uitkTextHandle";
@@ -377,7 +377,7 @@ namespace UIMarkdownRenderer
         {
             if (m_CurrentBlockText.userData == null)
             {
-                //this capture the current click handler, so i fm_CurrentLinkHandler is changed before the link is clicked
+                //this capture the current click handler, so if m_CurrentLinkHandler is changed before the link is clicked
                 //we use the right one.
                 var clickHandler = m_CurrentLinkHandler;
                 m_CurrentBlockText.RegisterCallback<MouseMoveEvent>(MouseMoveOnLink);

@@ -168,7 +168,7 @@ namespace UIMarkdownRenderer
             {
                 //this is a link to an external MD or text file so we open it with the viewer instead of using Application.OpenURL
                 if (!Path.IsPathRooted(link))
-                    link = Path.Combine(Path.GetDirectoryName(filePath), link);
+                    link = Path.Combine(Path.GetDirectoryName(renderer.FileFolder), link);
 
                 Open(link);
             }

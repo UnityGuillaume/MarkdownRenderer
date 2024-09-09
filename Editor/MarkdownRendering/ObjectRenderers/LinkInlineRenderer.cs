@@ -7,6 +7,7 @@ using Markdig.Syntax.Inlines;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UIElements;
 
 namespace UIMarkdownRenderer.ObjectRenderers
 {
@@ -31,6 +32,25 @@ namespace UIMarkdownRenderer.ObjectRenderers
 
                 var uwr = new UnityWebRequest(link, UnityWebRequest.kHttpVerbGET);
                 var imgElem = renderer.AddImage();
+                imgElem.RegisterCallback<GeometryChangedEvent>(evt =>
+                {
+                    if (imgElem.image != null)
+                    {
+                        var texture = imgElem.image;
+                        float aspectRatio = texture.width / (float)texture.height;
+                        float targetWidth = evt.newRect.width;
+                        float targetHeight = targetWidth/aspectRatio;
+
+                        if (!Mathf.Approximately(targetWidth, evt.newRect.width) ||
+                            !Mathf.Approximately(targetHeight, evt.newRect.height))
+                        {
+                            //we always set the width as 100% as this will allow to resize on parent resize
+                            //be height will be based on aspect ratio
+                            imgElem.style.width = Length.Percent(100);
+                            imgElem.style.height = targetHeight;
+                        }
+                    }
+                });
                 
                 var attribute = obj.GetAttributes();
                 if (attribute.Classes != null)
@@ -51,6 +71,8 @@ namespace UIMarkdownRenderer.ObjectRenderers
                     try
                     {
                         imgElem.image = DownloadHandlerTexture.GetContent(uwr);
+                        //force a resize to call our custom callback
+                        imgElem.style.width = 10;
                     }
                     catch (Exception x)
                     {
