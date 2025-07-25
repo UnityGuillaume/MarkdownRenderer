@@ -21,8 +21,10 @@ namespace UIMarkdownRenderer
     public class UIMarkdownRenderer : RendererBase
     {
         private static StyleSheet s_DefaultStylesheet = null;
-        private static UIMarkdownRenderer s_StaticRenderer = null;
-        private static MarkdownPipeline s_StaticPipeline;
+        private static VisualTreeAsset s_VideoPlayerElementPrefab;
+        private static StyleSheet s_VideoPlayerStyleSheet = null;
+        
+        private static MarkdownPipeline s_StaticPipeline = new MarkdownPipelineBuilder().UseGenericAttributes().UseYamlFrontMatter().Build();
 
         public class Command
         {
@@ -32,12 +34,22 @@ namespace UIMarkdownRenderer
 
         public delegate void CommandHandlerDelegate(Command cmd);
         
+        /// <summary>
+        /// The root visual element. Add this to your UI tree to render the Markdown.
+        /// </summary>
         public VisualElement RootElement { protected set; get; }
+        
+        /// <summary>
+        /// This is the root of the content. This will be the same as RootElement if a ScrollView wasn't asked when
+        /// creating the Renderer, otherwise this will be the ScrollView
+        /// </summary>
+        public VisualElement ContentRoot { protected set; get; }
         public bool LockTextCreation { get; set; } = false;
         public int IndentLevel { get; set; } = 0;
-
+        
         public string FileFolder => m_FileFolder;
-
+        
+        private bool m_IncludeScrollView;
         private Stack<VisualElement> m_BlockStack = new Stack<VisualElement>();
 
         private string m_LocalFilePath;
@@ -73,7 +85,7 @@ namespace UIMarkdownRenderer
         }
 #endif
 
-        private Action<string> m_CurrentLinkHandler;
+        private Action<string, UIMarkdownRenderer> m_CurrentLinkHandler;
 
         private CommandHandlerDelegate m_CommandHandler;
 
@@ -86,58 +98,9 @@ namespace UIMarkdownRenderer
 
             return this;
         }
-
-        public static VisualElement GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true, string filePath = "")
-        {
-            if (s_DefaultStylesheet == null)
-            {
-                s_DefaultStylesheet =  AssetDatabase.LoadAssetAtPath("Packages/com.rtl.markdownrenderer/Styles/MarkdownRenderer.uss", typeof(StyleSheet)) as StyleSheet;
-            
-                if(s_DefaultStylesheet == null)
-                    Debug.LogError("Couldn't load the MarkdownRenderer.uss stylesheet");
-            }
-
-            if (s_StaticRenderer == null)
-            {
-                s_StaticRenderer = new UIMarkdownRenderer();
-                s_StaticPipeline = new MarkdownPipelineBuilder().UseGenericAttributes().UseYamlFrontMatter().Build();
-            }
-
-            s_StaticRenderer.m_CurrentLinkHandler = LinkHandler;
-            s_StaticRenderer.m_LocalFilePath = Path.GetDirectoryName(filePath);
-            s_StaticRenderer.m_FileFolder = Path.GetFullPath(s_StaticRenderer.m_LocalFilePath);
-            s_StaticRenderer.m_CustomStylesheets = new List<StyleSheet>();
-            
-            s_StaticRenderer.m_HeadersToLabelMappings.Clear();
-
-            var parsed = Markdig.Markdown.Parse(markdownText, s_StaticPipeline);
-
-            s_StaticRenderer.Render(parsed);
-
-            VisualElement returnElem = null;
-            if (includeScrollview)
-            {
-                returnElem = new ScrollView();
-                returnElem.Add(s_StaticRenderer.RootElement);
-            }
-            else
-            {
-                returnElem =  s_StaticRenderer.RootElement;
-            }
-            
-            if(s_DefaultStylesheet != null)
-                returnElem.styleSheets.Add(s_DefaultStylesheet);
-
-            foreach (var stylesheet in s_StaticRenderer.m_CustomStylesheets)
-            {
-                returnElem.styleSheets.Add(stylesheet);
-            }
-
-            return returnElem;
-        }
-
+        
         //Call to handle all type of link : relative, absolute and special search
-        public static string ResolveLink(string link)
+        public string ResolveLink(string link)
         {
             if (link.StartsWith("search:"))
             {
@@ -172,7 +135,7 @@ namespace UIMarkdownRenderer
             else if (link.StartsWith(".") || link.StartsWith(".."))
             {
                 link = "/" + link;
-                link = s_StaticRenderer.FileFolder + link;
+                link = FileFolder + link;
             }
             else if (link.StartsWith("Packages") || link.StartsWith("Assets"))
             {
@@ -184,14 +147,14 @@ namespace UIMarkdownRenderer
             return link;
         }
 
-        public static void RegisterCommandHandler(CommandHandlerDelegate handler)
+        public void RegisterCommandHandler(CommandHandlerDelegate handler)
         {
-            s_StaticRenderer.m_CommandHandler += handler;
+            m_CommandHandler += handler;
         }
 
-        public static void SendCommand(Command cmd)
+        public void SendCommand(Command cmd)
         {
-            s_StaticRenderer.m_CommandHandler.Invoke(cmd);
+            m_CommandHandler.Invoke(cmd);
         }
 
         void DefaultCommandHandler(Command cmd)
@@ -218,16 +181,33 @@ namespace UIMarkdownRenderer
 
         void CreateNewRoot()
         {
-            RootElement = new VisualElement();
-            RootElement.name = "RendererRoot";
-            RootElement.AddToClassList("mainBody");
-            
+            ContentRoot.Clear();
             m_BlockStack.Clear();
-            m_BlockStack.Push(RootElement);
+            m_BlockStack.Push(ContentRoot);
         }
 
-        public UIMarkdownRenderer()
+        public UIMarkdownRenderer(Action<string, UIMarkdownRenderer> LinkHandler, bool includeScrollview = true)
         {
+            if (s_DefaultStylesheet == null)
+            {
+                s_DefaultStylesheet =  AssetDatabase.LoadAssetAtPath("Packages/com.rtl.markdownrenderer/Styles/MarkdownRenderer.uss", typeof(StyleSheet)) as StyleSheet;
+                if(s_DefaultStylesheet == null)
+                    Debug.LogError("Couldn't load the MarkdownRenderer.uss stylesheet");
+            }
+
+            if (s_VideoPlayerElementPrefab == null)
+            {
+                s_VideoPlayerElementPrefab =
+                    AssetDatabase.LoadAssetAtPath(
+                        "Packages/com.rtl.markdownrenderer/Editor/VideoElement/VideoPlayerElement.uxml",
+                        typeof(VisualTreeAsset)) as VisualTreeAsset;
+                
+                s_VideoPlayerStyleSheet =
+                    AssetDatabase.LoadAssetAtPath(
+                        "Packages/com.rtl.markdownrenderer/Editor/VideoElement/VideoPlayerElement.uss",
+                        typeof(StyleSheet)) as StyleSheet;
+            }
+
             m_LoadingTexture = EditorGUIUtility.Load("WaitSpin00") as Texture;
 
             ObjectRenderers.Add(new YamlFrontMatterHandler());
@@ -246,7 +226,7 @@ namespace UIMarkdownRenderer
             ObjectRenderers.Add(new LinkInlineRenderer());
             
 #if UNITY_2022_2_OR_NEWER
-            //In 2022.2 and after there is even when hovering over link in label so we can use that!
+            //In 2022.2 and after there is an event when hovering over link in a label so we can use that instead of reflection
 #else
 #if UNITY_2022_1_OR_NEWER
             string handleName = "uitkTextHandle";
@@ -273,6 +253,50 @@ namespace UIMarkdownRenderer
                 Type.GetType("UnityEngine.TextCore.Text.TextElementInfo, UnityEngine.TextCoreTextEngineModule");
 #endif
             m_CommandHandler += DefaultCommandHandler;
+            
+            m_CurrentLinkHandler = LinkHandler;
+            m_CustomStylesheets = new List<StyleSheet>();
+            m_HeadersToLabelMappings.Clear();
+            
+            ContentRoot = new VisualElement
+            {
+                name = "RendererRoot"
+            };
+            ContentRoot.AddToClassList("mainBody");
+
+            m_IncludeScrollView = includeScrollview;
+            if (includeScrollview)
+            {
+                RootElement = new ScrollView();
+                RootElement.name = "ScrollViewRoot";
+                RootElement.Add(ContentRoot);
+            }
+            else
+            {
+                RootElement = ContentRoot;
+            }
+
+            if(s_DefaultStylesheet != null)
+                RootElement.styleSheets.Add(s_DefaultStylesheet);
+
+            foreach (var stylesheet in m_CustomStylesheets)
+            {
+                RootElement.styleSheets.Add(stylesheet);
+            }
+        }
+
+        public void OpenFile(string filePath)
+        {
+            m_LocalFilePath = Path.GetDirectoryName(filePath);
+            m_FileFolder = Path.GetFullPath(m_LocalFilePath);
+            
+            SetMarkdown(File.ReadAllText(filePath));
+        }
+
+        public void SetMarkdown(string markdownText)
+        {
+            var parsed = Markdown.Parse(markdownText, s_StaticPipeline);
+            Render(parsed);
         }
 
         internal void WriteLeafBlockInline(LeafBlock block)
@@ -309,14 +333,14 @@ namespace UIMarkdownRenderer
         {
             if (path.StartsWith("."))
             {
-                path = s_StaticRenderer.m_LocalFilePath + path.Remove(0, 1);
+                path = m_LocalFilePath + path.Remove(0, 1);
             }
             
             var stylesheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
 
             if (stylesheet == null)
             {
-                Debug.LogError($"Couldn't find custom USS {path} defined in file {s_StaticRenderer.m_LocalFilePath}");
+                Debug.LogError($"Couldn't find custom USS {path} defined in file {m_LocalFilePath}");
                 return;
             }
             
@@ -362,12 +386,25 @@ namespace UIMarkdownRenderer
             return imgElement;
         }
 
+        public VideoPlayerElement AddVideoPlayer()
+        {
+            FinishBlock();
+
+            VideoPlayerElement newPlayer = s_VideoPlayerElementPrefab.Instantiate().Q<VideoPlayerElement>();
+            newPlayer.styleSheets.Add(s_VideoPlayerStyleSheet);
+            
+            m_BlockStack.Peek().Add(newPlayer);
+            StartBlock();
+
+            return newPlayer;
+        }
+
 #if !UNITY_2022_2_OR_NEWER
         public void OpenLink(string linkTarget)
         {
             if (m_CurrentBlockText.userData == null)
             {
-                //this capture the current click handler, so i fm_CurrentLinkHandler is changed before the link is clicked
+                //this capture the current click handler, so if m_CurrentLinkHandler is changed before the link is clicked
                 //we use the right one.
                 var clickHandler = m_CurrentLinkHandler;
                 m_CurrentBlockText.RegisterCallback<MouseMoveEvent>(MouseMoveOnLink);
@@ -447,7 +484,7 @@ namespace UIMarkdownRenderer
             
             m_CurrentBlockText.RegisterCallback<PointerUpLinkTagEvent>(evt =>
             {
-                m_CurrentLinkHandler(evt.linkID);
+                m_CurrentLinkHandler(evt.linkID, this);
             });
         }
     #endif
@@ -470,34 +507,33 @@ namespace UIMarkdownRenderer
             });
         }
 
-        public static void ScrollToHeader(string link)
+        /// <summary>
+        /// Will return the Label that correspond to the link (in the form of #header-text) passed as parameter 
+        /// </summary>
+        /// <param name="link">An anchor link in the form #header-text</param>
+        /// <returns></returns>
+        public Label GetLabelFromHeaderAnchor(string link)
         {
-            foreach (var headerEntry in s_StaticRenderer.m_HeadersToLabelMappings)
+            foreach (var headerEntry in m_HeadersToLabelMappings)
             {
                 if (headerEntry.HeaderKey.StartsWith(link.Remove(0, 1)))
-                {
-                    //TODO : feel pretty inefficient
-                    //As link handler doesn't know about the VisualElement hierarchy (e.g. both Inspector and Viewer use
-                    //the link handler) easier to find the scroll view here, but this feel inneficient
-
-                    var label = headerEntry.HeaderLabel;
-                    var currentParent = label.parent;
-
-                    while (currentParent != null && currentParent is not ScrollView)
-                    {
-                        currentParent = currentParent.parent;
-                    }
-
-                    if (currentParent != null)
-                    {
-                        var scrollView = currentParent as ScrollView;
-                        var localLabelPos = scrollView.WorldToLocal(label.worldBound);
-                        scrollView.scrollOffset = new Vector2(scrollView.scrollOffset.x, localLabelPos.y);
-                    }
-
-                    return;
-                }
+                    return headerEntry.HeaderLabel;
             }
+            return null;
+        }
+
+        public void ScrollToHeader(string link)
+        {
+            if (!m_IncludeScrollView)
+                return;
+
+            var label = GetLabelFromHeaderAnchor(link);
+            if (label == null) return;
+            
+            
+            var scrollView = RootElement as ScrollView;
+            var localLabelPos = scrollView.WorldToLocal(label.worldBound);
+            scrollView.scrollOffset = new Vector2(scrollView.scrollOffset.x, localLabelPos.y);
         }
 
 

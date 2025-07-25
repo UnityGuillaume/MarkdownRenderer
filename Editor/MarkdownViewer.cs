@@ -11,6 +11,7 @@ namespace UIMarkdownRenderer
     public class MarkdownViewer : EditorWindow
     {
         private string m_Path;
+        private UIMarkdownRenderer m_Renderer;
 
         [OnOpenAsset(0)]
         public static bool HandleDblClick(int instanceID, int line)
@@ -73,17 +74,23 @@ namespace UIMarkdownRenderer
             }
         }
 
-        void Setup()
-        { 
-            rootVisualElement.Clear();
-            rootVisualElement.Add(UIMarkdownRenderer.GenerateVisualElement(File.ReadAllText(m_Path), lnk => HandleLink(lnk, m_Path), true, m_Path));
+        private void Awake()
+        {
+            m_Renderer = new UIMarkdownRenderer(HandleLink, true);
         }
 
-        public static void HandleLink(string link, string filePath)
+        void Setup()
+        {
+            rootVisualElement.Clear();
+            m_Renderer.OpenFile(m_Path);
+            rootVisualElement.Add(m_Renderer.RootElement);
+        }
+
+        public static void HandleLink(string link, UIMarkdownRenderer renderer)
         {
             if (link.StartsWith("#"))
             {
-                UIMarkdownRenderer.ScrollToHeader(link);
+                renderer.ScrollToHeader(link);
             }
             else if (link.StartsWith("Assets") || link.StartsWith("Packages"))
             {
@@ -155,13 +162,13 @@ namespace UIMarkdownRenderer
                     CommandParameters = parameters
                 };
                 
-                UIMarkdownRenderer.SendCommand(cmd);
+                renderer.SendCommand(cmd);
             }
             else if (link.EndsWith(".md") || link.EndsWith(".txt"))
             {
                 //this is a link to an external MD or text file so we open it with the viewer instead of using Application.OpenURL
                 if (!Path.IsPathRooted(link))
-                    link = Path.Combine(Path.GetDirectoryName(filePath), link);
+                    link = Path.Combine(Path.GetDirectoryName(renderer.FileFolder), link);
 
                 Open(link);
             }

@@ -1,0 +1,46 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Packages/com.unity.learn.iet-framework/Editor/UI/CustomControl/VideoPlayer/VideoPlayerElement.uss?fileID=7433441132597879392&amp;guid=d157d5015887d4b8599ce98eaced5686&amp;type=3#VideoPlayerElement" />
+    <VideoPlayerElement>
+        <ui:VisualElement name="videoPlayer" class="video-content">
+            <ui:VisualElement name="PlayBar" class="video-control-bar" style="scale: 1 1;">
+                <ui:VisualElement name="PlayTrack" class="video-play-track">
+                    <ui:VisualElement name="PlayTrackFiller" class="video-play-track-filler" style="flex-grow: 1;">
+                        <ui:VisualElement name="PlayTrackHead" class="video-play-track-head" style="translate: -50% 0;" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="PlayControl" class="video-control-container" style="flex-grow: 1;">
+                    <ui:VisualElement name="PlayButton" class="video-control-button video-pause-button" />
+                    <ui:VisualElement name="AudioIcon" class="video-audio-icon" />
+                    <ui:Slider name="VolumeSlider" low-value="0" high-value="1.0" page-szie="0" class="video-audio-slider" />
+                    <ui:VisualElement name="Spacer" style="flex-grow: 1;" />
+                    <ui:VisualElement name="VideoSpeedArea" class="video-speed-button">
+                        <ui:VisualElement name="SpeedSelectorPopup" class="video-speed-selector">
+                            <ui:VisualElement name="Speed2" class="video-speed-label-container" style="flex-grow: 1;">
+                                <ui:Label text="2x" name="SpeedLabel" class="video-speed-label" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="Speed15" class="video-speed-label-container" style="flex-grow: 1;">
+                                <ui:Label text="1.5x" name="SpeedLabel" class="video-speed-label" style="font-size: 12px;" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="Speed1" class="video-speed-label-container" style="flex-grow: 1;">
+                                <ui:Label text="1x" name="SpeedLabel" class="video-speed-label" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="Speed05" class="video-speed-label-container" style="flex-grow: 1;">
+                                <ui:Label text="0.5x" name="SpeedLabel" class="video-speed-label" style="font-size: 12px;" />
+                            </ui:VisualElement>
+                            <ui:VisualElement name="Speed025" class="video-speed-label-container" style="flex-grow: 1; font-size: 12px;">
+                                <ui:Label text="0.25x" name="SpeedLabel" class="video-speed-label" style="font-size: 10px;" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement name="SpeedSelectorButton" class="video-speed-label-container" style="flex-grow: 1;">
+                            <ui:Label text="1x" name="SpeedLabel" class="video-speed-label" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="PopoutButton" class="video-control-button video-popup-button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="PlayOverlay" class="video-play-overlay">
+                <ui:VisualElement name="PlayOverlayButton" class="video-play-overlay-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </VideoPlayerElement>
+</ui:UXML>

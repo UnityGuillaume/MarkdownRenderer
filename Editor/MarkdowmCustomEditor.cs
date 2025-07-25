@@ -11,11 +11,19 @@ namespace UIMarkdownRenderer
      [CustomEditor(typeof(TextAsset))]
      public class MarkdownCustomEditor : Editor
      {
+         private UIMarkdownRenderer m_Renderer;
+         
          private Editor m_DefaultEditor;
          private bool m_IsMDFile;
          private string m_TargetPath;
 
-        public virtual void OnEnable()
+
+         private void Awake()
+         {
+             m_Renderer = new UIMarkdownRenderer(MarkdownViewer.HandleLink, true);
+         }
+
+         public virtual void OnEnable()
         {
             m_TargetPath = AssetDatabase.GetAssetPath(target);
 
@@ -32,7 +40,8 @@ namespace UIMarkdownRenderer
         {
             if (m_IsMDFile)
             {
-                return UIMarkdownRenderer.GenerateVisualElement(File.ReadAllText(m_TargetPath), lnk => MarkdownViewer.HandleLink(lnk, m_TargetPath), true, m_TargetPath);
+                m_Renderer.OpenFile(Path.GetFullPath(m_TargetPath));
+                return m_Renderer.RootElement;
             }
 
             var elem = new IMGUIContainer(m_DefaultEditor.OnInspectorGUI);

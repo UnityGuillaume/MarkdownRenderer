@@ -2,7 +2,7 @@
 
 **This package is neither endorsed nor supported by Unity, this is a personal project**
 
-This package add rendering of markdown file in Unity by using UIElement.
+This package add rendering of markdown file in the Unity Editor by using UIElement.
 
 > In Unity 2021.x and 2022.1, this will use reflection to handle links, so it could
 > break in some patch releases if those classes are changed.
@@ -14,6 +14,10 @@ you own windows and tools.
 
 It also include a special Attribute to display Markdown doc file for a given Monobehaviour and
 the Markdown implementation handle some special keyword link to simplify link in a Unity Project.
+
+> **Note on version 1.2.0** 1.2.0 introduce breaking change if you were rendering in your own tools.
+> The UIMarkdownRenderer now need to be instantiated and doesn't have static function anymore. This
+> allow to have multiple file open in different viewers without messing some internal references 
 
 - [Installation](#installation)
 - [Special syntax](#note-and-special-syntax)
@@ -50,6 +54,15 @@ If you installed git when the Unity editor or Hub was running, the PATH it used 
 
 The Markdown support implementation may miss some bits, so this list some quirks it may have.
 This also highlight some special keyword/command it has, especially in link, specific to unity.
+
+## Video Support
+
+The renderer support video file, either local path (stored in the project) or remote path. The system rely on the Unity VideoPlayer
+so refer to the [file compatibility documentation](https://docs.unity3d.com/Manual/video-sources-compatibility-target-platforms.html) for
+more info on what is supported and not. 
+
+Video use the same syntax as image, but will load as video if the path extension is one of 
+`.asf, .avi, .dv, .m4v, .mov, .mp4, .mpg, .mpeg, .ogv, .vp8, .webm, .wmv` 
 
 ## Relative path
 
@@ -180,15 +193,19 @@ a doc file that is in `Assets/Tools/Docs/MyBehaviourDoc.md` the attribute `Markd
 
 # Render Markdown in your own tools
 
-The markdown renderer is using UIElement, so you can embed it in your own tools. 
+The markdown renderer is using UIElement, so you can embed it in your own tools.
 
-Just call
 
-```
-GenerateVisualElement(string markdownText,  Action<string> LinkHandler, bool includeScrollview = true, string filePath = "")
-```
+Create an instance of `UIMarkdowRenderer`. The parameters are : 
 
-- `markdownText` : the content of the markdown file to render
 - `linkHandler` : the function called when a link is clicked. MarkdownViewer contains a default one you can use or copy
 - `includeScrollview` : if the scrollview should be part of the returned VisualElement or not. Set to false if you want to put in your own scrollview.
-- `filePath` : the path to the rendered file. Used by the image rendering code to find relative path image. If you don't use relative path image, you can leave to empty.
+
+Then either call `OpenFile` or `SetMarkdown` to set the content. 
+
+- `OpenFile` : takes the path of the file. It is the better option as this will set proper path of the file, which is useful for relative path resolution
+- `SetMarkdown` : will just render the given markdown, but as there will be no idea what file it come from, relative path link (both image and link) won't work.
+
+Then you can add the `RootElement` from the UIMarkdownRenderer to any UIElement.
+
+Check out MarkdownViewer or MarkdownCustomEditor for an example of it being used.
