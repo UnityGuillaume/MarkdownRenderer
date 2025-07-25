@@ -1,10 +1,13 @@
 # Changelog
 All notable changes to this package will be documented in this file.
 
-## [1.2.0] - XXXX-XX-XX
+## [1.2.0] - 2025-07-25
 
 ### Changed
 - **Breaking Change** : UIMarkdown renderer is not static anymore. need to instance it to use it.
+
+### Added
+- Video file are now supported (use the image syntax but look for video file extension)
 
 ### Fixed
 - Image now properly scale without extra empty space around it

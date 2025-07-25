@@ -2,7 +2,7 @@
 
 **This package is neither endorsed nor supported by Unity, this is a personal project**
 
-This package add rendering of markdown file in Unity by using UIElement.
+This package add rendering of markdown file in the Unity Editor by using UIElement.
 
 > In Unity 2021.x and 2022.1, this will use reflection to handle links, so it could
 > break in some patch releases if those classes are changed.
@@ -54,6 +54,15 @@ If you installed git when the Unity editor or Hub was running, the PATH it used 
 
 The Markdown support implementation may miss some bits, so this list some quirks it may have.
 This also highlight some special keyword/command it has, especially in link, specific to unity.
+
+## Video Support
+
+The renderer support video file, either local path (stored in the project) or remote path. The system rely on the Unity VideoPlayer
+so refer to the [file compatibility documentation](https://docs.unity3d.com/Manual/video-sources-compatibility-target-platforms.html) for
+more info on what is supported and not. 
+
+Video use the same syntax as image, but will load as video if the path extension is one of 
+`.asf, .avi, .dv, .m4v, .mov, .mp4, .mpg, .mpeg, .ogv, .vp8, .webm, .wmv` 
 
 ## Relative path
 
