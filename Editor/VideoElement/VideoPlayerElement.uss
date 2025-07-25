@@ -1,0 +1,201 @@
+.video-play-button {
+    background-image: resource("Icons/Animation.Play.png");
+}
+
+.video-popup-button {
+    background-image: resource("Icons/Animation.Play.png");
+}
+
+.video-control-bar {
+    height: 35px;
+    width: 100%;
+    background-color: rgba(0,0,0,0.5);
+
+    flex-direction: column;
+
+    transform-origin: bottom center;
+    scale: 1 0;
+
+    transition:  scale 0.1s ease-in;
+}
+
+.video-control-button {
+    width: 27px;
+    flex-shrink: 0;
+}
+
+.video-play-track {
+    height: 8px;
+    background-color: black;
+    flex-grow: 0;
+}
+
+.video-play-track-filler {
+    width: 100%;
+    height: 100%;
+}
+
+.video-control-container {
+    flex-direction: row;
+    height: 28px;
+}
+
+.video-play-button {
+    background-image: resource('d_Animation.Play@2x');
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.video-pause-button {
+    background-image: resource("d_PauseButton On@2x");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.video-speed-button {
+    width: 36px;
+    flex-grow: 0;
+}
+
+.video-speed-label {
+    color: white;
+    -unity-text-align: middle-center;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.video-speed-label-container {
+    padding: 1px;
+}
+
+.video-speed-label-container:hover {
+    border-color: white;
+    border-width: 1px;
+    padding: 1px;
+    background-color: rgb(60,60,60);
+}
+
+.video-speed-label-container.selected {
+    padding: 0px;
+    border-color: cornflowerblue;
+    border-width: 1px;
+}
+
+
+.video-speed-selector {
+    height: 100px;
+    background-color: black;
+
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -100px;
+
+    transform-origin: bottom;
+
+    scale: 1 0;
+
+    transition:  scale 0.1s ease-in;
+}
+
+.video-speed-selector-opened {
+    scale: 1 1;
+}
+
+.video-audio-icon {
+    background-image: resource("d_Profiler.Audio@2x");
+    width: 27px;
+    flex-shrink: 0;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.video-audio-slider {
+    width: 100px;
+}
+
+.video-control-button:hover {
+    -unity-background-image-tint-color: cornflowerblue;
+}
+
+.video-popup-button {
+    background-image: resource("ScaleTool On@2x");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.video-play-track-filler {
+    background-color: rgba(255,255,255,0.5);
+}
+
+.video-play-track-head {
+    width: 6px;
+
+    top: -2px;
+    bottom: -2px;
+
+    position: absolute;
+    flex-grow: 0;
+
+    background-color: white;
+    right: -6px;
+}
+
+.video-play-overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(0,0,0, 0.5);
+
+    align-content: center;
+    align-items: center;
+}
+
+.video-play-overlay-button {
+    width: 50px;
+    height: 50px;
+
+    flex-grow: 1.0;
+
+    background-image: url('HighResPlay.png');
+    -unity-background-scale-mode: scale-to-fit;
+
+    align-self: center;
+}
+
+.video-content {
+    height: 100%;
+    min-height: 180px;
+    width: 100%;
+    -unity-background-scale-mode: scale-to-fit;
+
+    flex-direction: column-reverse;
+
+    background-color: #252625;
+    align-items: flex-start;
+    justify-content: flex-start;
+
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
+.video-content:hover .image-popout-button {
+    visibility: visible;
+}
+
+.video-control-button:hover {
+    -unity-background-image-tint-color: cornflowerblue;
+}
+
+.video-content:hover .video-control-bar {
+    scale: 1 1;
+}
+
+.popout-media .video-control-bar {
+    scale: 1 1;
+}
+
+.popout-media {
+    flex-shrink: 0;
+    flex-grow: 1;
+}

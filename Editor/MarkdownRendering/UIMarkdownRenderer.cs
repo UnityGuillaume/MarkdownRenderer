@@ -21,7 +21,9 @@ namespace UIMarkdownRenderer
     public class UIMarkdownRenderer : RendererBase
     {
         private static StyleSheet s_DefaultStylesheet = null;
-        //private static UIMarkdownRenderer s_StaticRenderer = null;
+        private static VisualTreeAsset s_VideoPlayerElementPrefab;
+        private static StyleSheet s_VideoPlayerStyleSheet = null;
+        
         private static MarkdownPipeline s_StaticPipeline = new MarkdownPipelineBuilder().UseGenericAttributes().UseYamlFrontMatter().Build();
 
         public class Command
@@ -46,8 +48,7 @@ namespace UIMarkdownRenderer
         public int IndentLevel { get; set; } = 0;
         
         public string FileFolder => m_FileFolder;
-
-
+        
         private bool m_IncludeScrollView;
         private Stack<VisualElement> m_BlockStack = new Stack<VisualElement>();
 
@@ -193,7 +194,20 @@ namespace UIMarkdownRenderer
                 if(s_DefaultStylesheet == null)
                     Debug.LogError("Couldn't load the MarkdownRenderer.uss stylesheet");
             }
-            
+
+            if (s_VideoPlayerElementPrefab == null)
+            {
+                s_VideoPlayerElementPrefab =
+                    AssetDatabase.LoadAssetAtPath(
+                        "Packages/com.rtl.markdownrenderer/Editor/VideoElement/VideoPlayerElement.uxml",
+                        typeof(VisualTreeAsset)) as VisualTreeAsset;
+                
+                s_VideoPlayerStyleSheet =
+                    AssetDatabase.LoadAssetAtPath(
+                        "Packages/com.rtl.markdownrenderer/Editor/VideoElement/VideoPlayerElement.uss",
+                        typeof(StyleSheet)) as StyleSheet;
+            }
+
             m_LoadingTexture = EditorGUIUtility.Load("WaitSpin00") as Texture;
 
             ObjectRenderers.Add(new YamlFrontMatterHandler());
@@ -370,6 +384,19 @@ namespace UIMarkdownRenderer
             StartBlock();
 
             return imgElement;
+        }
+
+        public VideoPlayerElement AddVideoPlayer()
+        {
+            FinishBlock();
+
+            VideoPlayerElement newPlayer = s_VideoPlayerElementPrefab.Instantiate().Q<VideoPlayerElement>();
+            newPlayer.styleSheets.Add(s_VideoPlayerStyleSheet);
+            
+            m_BlockStack.Peek().Add(newPlayer);
+            StartBlock();
+
+            return newPlayer;
         }
 
 #if !UNITY_2022_2_OR_NEWER
